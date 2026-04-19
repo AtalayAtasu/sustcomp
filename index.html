@@ -240,7 +240,7 @@ const LEVERS=[
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:''});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]}});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -338,7 +338,7 @@ function Waterfall({sth,capex,rate,horizon,curr}){
 }
 
 /* ─── AI CHAT PANEL ─── */
-function AIChat({stageLabel, systemPrompt, buildPrompt}){
+function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
   const [open,setOpen]=useState(false);
   const [msgs,setMsgs]=useState([]);
   const [input,setInput]=useState('');
@@ -353,14 +353,16 @@ function AIChat({stageLabel, systemPrompt, buildPrompt}){
 
   useEffect(()=>{if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
 
+  const syncMsgs=(m)=>{ setMsgs(m); if(onUpdate) onUpdate(m); };
+
   const doStart=async()=>{
     setStarted(true);setLoading(true);setError(null);setNeedKey(false);
     const prompt=buildPrompt();
     const initMsg={role:'user',content:prompt};
-    setMsgs([initMsg]);
+    syncMsgs([initMsg]);
     try{
       const text=await callClaude(systemPrompt,[initMsg],700);
-      setMsgs([initMsg,{role:'assistant',content:text}]);
+      syncMsgs([initMsg,{role:'assistant',content:text}]);
     }catch(e){
       if(e.message==='NO_KEY'){setNeedKey(true);setStarted(false);}
       else setError('API error: '+e.message+'. Check your key and try again.');
@@ -387,10 +389,10 @@ function AIChat({stageLabel, systemPrompt, buildPrompt}){
     if(!input.trim()||loading)return;
     const userMsg={role:'user',content:input};
     const updated=[...msgs,userMsg];
-    setMsgs(updated);setInput('');setLoading(true);setError(null);
+    syncMsgs(updated);setInput('');setLoading(true);setError(null);
     try{
       const text=await callClaude(systemPrompt,updated,600);
-      setMsgs([...updated,{role:'assistant',content:text}]);
+      syncMsgs([...updated,{role:'assistant',content:text}]);
     }catch(e){setError('Error: '+e.message);}
     setLoading(false);
   };
@@ -469,10 +471,160 @@ function AIChat({stageLabel, systemPrompt, buildPrompt}){
   );
 }
 
+/* ─── EXTRACT COACHING DIGEST ─── */
+function coachingDigest(chats){
+  const extract=(msgs,label)=>{
+    const aiMsgs=msgs.filter((m,i)=>m.role==='assistant'&&i>0);
+    if(!aiMsgs.length) return '';
+    return `\n--- AI Coaching: ${label} ---\n`+aiMsgs.map(m=>m.content).join('\n\n');
+  };
+  return [extract(chats.q1||[],'Stakeholder Analysis'), extract(chats.q2||[],'Strategic Levers'), extract(chats.q3||[],'NPV+ Valuation')].filter(Boolean).join('\n');
+}
+
+/* ─── AI CONSULTANT ─── */
+function AIConsultant({st}){
+  const [state,setState]=useState('idle'); // idle|loading|done|error|needkey
+  const [report,setReport]=useState('');
+  const [error,setError]=useState('');
+  const [keyDraft,setKeyDraft]=useState('');
+  const [open,setOpen]=useState(false);
+  const [activeTab,setActiveTab]=useState('q1');
+
+  const generate=async()=>{
+    setState('loading');
+    const sysPrompt=`You are a senior sustainability strategy consultant with deep knowledge of business strategy, ESG, and industry dynamics. You have access to web search to research real-world context. Your task is to produce your own independent expert assessment of a sustainability challenge — structured as a three-stage analysis following the INSEAD Business Sustainability Programme framework:
+
+Q1 STAKEHOLDER ANALYSIS: Identify the four stakeholder categories (Nature & Society, Business Ecosystem, Regulators, Financial Institutions & Investors) that are materially relevant for this challenge and industry. For each: who specifically, what the pressure is, business impact, and where the opportunity lies.
+
+Q2 STRATEGIC LEVERS: Recommend the best strategic lever (Cost Reduction, WTP Creation, Market Creation, or Combination). Specify the target market segment if relevant. Explain the strategic path with reference to real companies that have pursued this successfully.
+
+Q3 NPV+ PERSPECTIVE: Provide a qualitative NPV+ assessment — which stakeholder benefit streams are most material, what the realistic order of magnitude of value is, and what the critical assumptions are for a positive business case. Reference real deals or investments where possible.
+
+Use web search to gather current, relevant information about the industry, regulation, and comparable cases. Be direct, specific, and evidence-based. Structure your response with clear section headers: ## Q1: Stakeholder Analysis, ## Q2: Strategic Lever Recommendation, ## Q3: NPV+ Perspective. Use **bold** for key points. Be constructive — this is meant to complement and enrich the group's own analysis.`;
+
+    const prompt=`Research and analyse this sustainability challenge for a group in the INSEAD Business Sustainability Programme:
+
+COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'not specified'}
+CHALLENGE: ${st.fish.name||'sustainability challenge'}
+${st.fish.desc||''}
+
+The group has produced their own analysis. Search for current information about:
+1. Key regulatory and market trends affecting this challenge in ${st.grp.industry||'this industry'}
+2. How leading companies are responding to "${st.fish.name}"
+3. Real investment cases and NPV benchmarks for similar sustainability initiatives
+
+Then produce your own independent expert three-stage analysis as instructed. Be specific, cite real examples, and provide constructive observations that enrich the group's thinking.`;
+
+    try{
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6',
+          max_tokens:2000,
+          system:sysPrompt,
+          tools:[{"type":"web_search_20250305","name":"web_search"}],
+          messages:[{role:'user',content:prompt}]
+        })
+      });
+      const data=await resp.json();
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
+      // Extract all text blocks (web search may produce multiple content blocks)
+      const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n\n');
+      if(!text) throw new Error('No text in response');
+      setReport(text);
+      setState('done');
+      setOpen(true);
+    }catch(e){setError(e.message);setState('error');}
+  };
+
+  const start=()=>{
+    if(!getApiKey()){setState('needkey');return;}
+    generate();
+  };
+
+  const submitKey=async()=>{
+    if(!keyDraft.trim())return;
+    setApiKey(keyDraft.trim());
+    try{
+      await callClaude('Reply OK.',[{role:'user',content:'OK?'}],5);
+      generate();
+    }catch(e){setError('Key test failed: '+e.message);setState('error');}
+  };
+
+  // Parse report into tabs
+  const sections={q1:'',q2:'',q3:''};
+  if(report){
+    const q1m=report.match(/##\s*Q1[^#]*([\s\S]*?)(?=##\s*Q2|$)/i);
+    const q2m=report.match(/##\s*Q2[^#]*([\s\S]*?)(?=##\s*Q3|$)/i);
+    const q3m=report.match(/##\s*Q3[^#]*([\s\S]*?)$/i);
+    if(q1m)sections.q1=q1m[1].trim();
+    if(q2m)sections.q2=q2m[1].trim();
+    if(q3m)sections.q3=q3m[1].trim();
+    if(!sections.q1&&!sections.q2&&!sections.q3)sections.q1=report;
+  }
+
+  const renderMd=text=>text.split('\n').map((ln,i)=>{
+    if(/^###\s/.test(ln))return<h4 key={i} style={{fontSize:'0.88rem',fontWeight:600,color:'white',margin:'1rem 0 0.3rem'}}>{ln.replace(/^###\s/,'')}</h4>;
+    if(/^##\s/.test(ln))return<h3 key={i} style={{fontSize:'0.95rem',fontWeight:600,color:'var(--gold)',margin:'1rem 0 0.4rem'}}>{ln.replace(/^##\s/,'')}</h3>;
+    if(/^[-•]\s/.test(ln))return<li key={i} style={{marginBottom:'0.3rem',color:'rgba(255,255,255,0.85)'}} dangerouslySetInnerHTML={{__html:ln.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+    if(ln.trim()==='')return<br key={i}/>;
+    return<p key={i} style={{marginBottom:'0.6rem',color:'rgba(255,255,255,0.85)',lineHeight:1.65}} dangerouslySetInnerHTML={{__html:ln.replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+  });
+
+  const TABS=[{id:'q1',label:'Q1 · Stakeholders'},{id:'q2',label:'Q2 · Strategy'},{id:'q3',label:'Q3 · NPV+'}];
+
+  return(
+    <div style={{background:'linear-gradient(135deg,#003D28 0%,#005C3C 100%)',borderRadius:'var(--r-lg)',border:'1px solid rgba(198,151,47,0.35)',overflow:'hidden',marginBottom:'1.5rem'}}>
+      <div style={{padding:'1.75rem 2rem'}}>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{width:46,height:46,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="22" height="22" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#003D28" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#003D28" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#003D28" strokeWidth="1.8"/></svg>
+            </div>
+            <div>
+              <div style={{fontSize:'1.05rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI Consultant Opinion</div>
+              <div style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.55)',marginTop:3}}>Independent expert analysis with live web research — Q1, Q2 & Q3</div>
+            </div>
+          </div>
+          {state==='idle'&&<button className="ai-trigger-btn" style={{margin:0}} onClick={start}>✦ Get Consultant Opinion</button>}
+          {state==='done'&&<button style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)',borderRadius:'var(--r)',padding:'0.5rem 1rem',cursor:'pointer',fontSize:'0.8rem',fontFamily:'inherit'}} onClick={()=>setOpen(o=>!o)}>{open?'Hide ▲':'Show ▼'}</button>}
+        </div>
+        {state==='needkey'&&<div className="ai-key-setup" style={{marginTop:'1.25rem'}}>
+          <p>Enter your <strong>Anthropic API key</strong> to enable the AI Consultant with web search.</p>
+          <div className="ai-key-row">
+            <input className="ai-key-input" type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
+            <button className="ai-key-btn" onClick={submitKey}>Connect →</button>
+          </div>
+        </div>}
+        {state==='loading'&&<div style={{marginTop:'1.25rem',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{display:'flex',gap:5}}><div className="dot"/><div className="dot"/><div className="dot"/></div>
+          <span style={{color:'rgba(255,255,255,0.5)',fontSize:'0.82rem'}}>Researching industry context and producing expert analysis…</span>
+        </div>}
+        {state==='error'&&<div style={{marginTop:'1rem',color:'#FC9D9D',fontSize:'0.82rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--gold)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.82rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
+      </div>
+
+      {state==='done'&&open&&<div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'0 2rem 2rem'}}>
+        <div style={{display:'flex',gap:4,marginBottom:'1.25rem',background:'rgba(0,0,0,0.2)',borderRadius:30,padding:4,width:'fit-content'}}>
+          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.35rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',fontWeight:500,background:activeTab===t.id?'var(--gold)':'none',color:activeTab===t.id?'#003D28':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>{t.label}</button>)}
+        </div>
+        <div style={{maxHeight:420,overflowY:'auto',paddingRight:4}}>
+          <ul style={{paddingLeft:'1.2rem'}}>
+            {renderMd(sections[activeTab]||'No content for this section.')}
+          </ul>
+        </div>
+        <div style={{marginTop:'1rem',fontSize:'0.7rem',color:'rgba(255,255,255,0.25)',borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'0.75rem'}}>
+          AI Consultant analysis is generated using live web search and is intended as a constructive complement to your group's own work — not a definitive assessment. Always apply your own judgement.
+        </div>
+      </div>}
+    </div>
+  );
+}
+
 /* ─── CFO REPORT ─── */
 function CFOReport({st, onClose}){
   const [html,setHtml]=useState('');
-  const [genState,setGenState]=useState(getApiKey()?'loading':'needkey'); // needkey | loading | done | error
+  const [genState,setGenState]=useState(getApiKey()?'loading':'needkey');
   const [error,setError]=useState('');
   const [keyDraft,setKeyDraft]=useState('');
 
@@ -487,10 +639,17 @@ function CFOReport({st, onClose}){
   const runGenerate=()=>{
     setGenState('loading');
     const system=`You are a senior management consultant writing a formal CFO-ready executive memo for an INSEAD executive education group presenting a sustainability strategy opportunity. Write in a crisp, precise, investment-grade style. Structured prose — not bullet lists for the main narrative. Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>, <table>, <tr>, <th>, <td>, and one class="highlight-box" div for the executive summary. No markdown, no preamble, no sign-off — output inner HTML only starting with content directly.`;
+
     const sthText=activeSth.map(t=>{const tp=STYPES.find(x=>x.id===t.id);return`${tp.label}: Who: ${t.who||'—'} | Pressure: ${t.pressure||'—'} | Impact: ${t.impact||'—'} | Opportunity: ${t.opp||'—'}`;}).join('\n');
     const valText=lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return`${tp.label}: ${l.blabel||l.opp?.slice(0,50)||'benefit'} — ${fmt(l.ann,st.curr)}/year → NPV @5yr: ${fmt(l.ann*af(st.rate,5),st.curr)}, @10yr: ${fmt(l.ann*af(st.rate,10),st.curr)}`;}).join('\n');
-    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${st.fish.desc}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${st.ldetail||'—'}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${st.pitch||'—'}\n\nStructure: (1) Executive summary highlight-box with recommendation + NPV headline. (2) Why this challenge is strategically material now. (3) Stakeholder landscape. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ narrative, key assumptions, why 10-year view matters. (6) Key risks and mitigants. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
-    callClaude(system,[{role:'user',content:prompt}],1800)
+
+    // Build coaching digest from saved chat history
+    const digest=coachingDigest(st.chats||{});
+    const digestSection=digest?`\nAI COACHING INSIGHTS FROM DIALOGUE (incorporate refined thinking from these exchanges into the report where relevant):\n${digest}\n`:'';
+
+    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${st.fish.desc}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${st.ldetail||'—'}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${st.pitch||'—'}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
+
+    callClaude(system,[{role:'user',content:prompt}],2000)
       .then(text=>{setHtml(text);setGenState('done');})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
@@ -510,12 +669,17 @@ function CFOReport({st, onClose}){
           <Logo/>
           <h2>Sustainability Strategy Opportunity<br/><span style={{fontSize:'1.1rem',fontWeight:400,color:'rgba(255,255,255,0.7)'}}>{st.fish.name||'Challenge Assessment'}</span></h2>
           <div className="meta">Prepared by: {st.grp.name||'Executive Team'}{st.grp.industry?` · ${st.grp.industry}`:''} · {new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+          {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)
+            ? <div style={{marginTop:'0.5rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.45)'}}>
+                AI coaching insights from {[st.chats.q1?.filter(m=>m.role==='assistant').length||0, st.chats.q2?.filter(m=>m.role==='assistant').length||0, st.chats.q3?.filter(m=>m.role==='assistant').length||0].reduce((a,b)=>a+b,0)} exchanges incorporated
+              </div>
+            : null}
           <div className="gold-line"/>
         </div>
         {genState==='needkey'&&(
           <div style={{padding:'2.5rem'}}>
-            <div className="ai-key-setup" style={{background:'#F8F6F1',border:'1px solid rgba(0,33,71,0.15)'}}>
-              <p style={{color:'#333'}}>To generate the AI-augmented CFO report, enter your <strong style={{color:'var(--navy)'}}>Anthropic API key</strong>. It stays in memory for this session only.</p>
+            <div className="ai-key-setup" style={{background:'#F6FAF8',border:'1px solid rgba(0,92,60,0.15)'}}>
+              <p style={{color:'#333'}}>Enter your <strong style={{color:'var(--navy)'}}>Anthropic API key</strong> to generate the AI-augmented CFO report.</p>
               <div className="ai-key-row">
                 <input className="ai-key-input" style={{background:'white',border:'1px solid rgba(0,0,0,0.2)',color:'#333'}} type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
                 <button className="ai-key-btn" onClick={submitKey}>Generate →</button>
@@ -524,25 +688,26 @@ function CFOReport({st, onClose}){
             </div>
           </div>
         )}
-        {genState==='loading'&&<div className="loading-report"><div className="spin"/><p>Generating executive report…</p><p className="sub">Synthesising your analysis across all stages</p></div>}
+        {genState==='loading'&&<div className="loading-report"><div className="spin"/><p>Generating executive report…</p><p className="sub">Synthesising your analysis and AI coaching insights</p></div>}
         {genState==='error'&&<div style={{padding:'2rem',color:'#C0392B',fontSize:'0.9rem'}}>Generation failed: {error}<br/><button className="btn btn-p" style={{marginTop:'1rem'}} onClick={runGenerate}>Retry</button></div>}
         {genState==='done'&&<div className="report-body" dangerouslySetInnerHTML={{__html:html}}/>}
         <div className="report-actions no-print">
           {genState==='done'&&<button className="btn btn-p" onClick={()=>{
             const win=window.open('','_blank');
             const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CFO Report — ${st.fish.name||'Sustainability Strategy'}</title>
+            const chatCount=[st.chats?.q1,st.chats?.q2,st.chats?.q3].flatMap(c=>c||[]).filter(m=>m.role==='assistant').length;
+            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CFO Report — ${(st.fish.name||'Sustainability Strategy').replace(/</g,'&lt;')}</title>
 <style>
 @page{margin:2.2cm 2.5cm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.72;color:#111;background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cover{border-bottom:3px solid #005C3C;padding-bottom:1.4rem;margin-bottom:2rem}
 .logo-row{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
-.logo-svg{flex-shrink:0}
 .logo-name{font-family:Georgia,serif;font-weight:700;font-size:1.5rem;letter-spacing:0.22em;color:#005C3C}
 .logo-tag{font-size:8pt;color:#888;letter-spacing:0.06em;margin-top:2px}
 h1{font-family:Georgia,serif;font-size:15pt;color:#003D28;margin-bottom:0.3rem;font-weight:700}
 .meta{font-size:9pt;color:#666;margin-top:0.4rem}
+.ai-note{font-size:8pt;color:#888;margin-top:0.25rem;font-style:italic}
 h3{font-family:Georgia,serif;font-size:11.5pt;color:#003D28;margin:1.5rem 0 0.45rem;padding-bottom:0.3rem;border-bottom:1px solid #C8DED5;font-weight:700}
 p{margin-bottom:0.8rem}
 ul,ol{padding-left:1.4rem;margin-bottom:0.8rem}
@@ -557,7 +722,7 @@ footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C8DED5;font-size
 </style></head><body>
 <div class="cover">
   <div class="logo-row">
-    <svg class="logo-svg" width="36" height="36" viewBox="0 0 44 44" fill="none">
+    <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
       <circle cx="22" cy="22" r="19.5" stroke="#005C3C" stroke-width="2"/>
       <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#005C3C" stroke-width="1.3"/>
       <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="#005C3C" stroke-width="1.3"/>
@@ -568,6 +733,7 @@ footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C8DED5;font-size
   </div>
   <h1>Sustainability Strategy Opportunity: ${(st.fish.name||'Challenge Assessment').replace(/</g,'&lt;')}</h1>
   <div class="meta">Prepared by: ${(st.grp.name||'Executive Team').replace(/</g,'&lt;')}${st.grp.industry?' · '+st.grp.industry.replace(/</g,'&lt;'):''} &nbsp;·&nbsp; ${date}</div>
+  ${chatCount>0?`<div class="ai-note">This report incorporates insights from ${chatCount} AI coaching exchange${chatCount>1?'s':''} across the three stages of analysis.</div>`:''}
 </div>
 ${html}
 <footer>© Atalay Atasu &amp; Karel Cool &nbsp;·&nbsp; INSEAD Business Sustainability Programme &nbsp;·&nbsp; ${date}</footer>
@@ -690,7 +856,7 @@ function S1({st,set}){
       })}
       <p style={{fontSize:'0.77rem',color:'#999',marginTop:'0.5rem'}}>Activate at least one stakeholder category. Each active category appears as a value line in Q3.</p>
     </div>
-    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt}/>
+    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} />
   </div>;
 }
 
@@ -739,7 +905,7 @@ Challenge their lever choice and strategic thinking. Is this the right lever? Is
         <textarea value={st.ldetail} onChange={e=>upd('ldetail',e.target.value)} placeholder="Describe concrete actions, business model changes, or investments required. Link back to the opportunities in Q1. Why is this lever the best fit for your competitive position?" style={{minHeight:120}}/>
       </div>
     </div>
-    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt}/>
+    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} />
   </div>;
 }
 
@@ -857,7 +1023,7 @@ Challenge this financial model. What assumptions are most fragile? What is the s
       <div className="fld" style={{marginBottom:0}}><textarea value={st.pitch} onChange={e=>upd('pitch',e.target.value)} placeholder="Explain the assumptions. For each stakeholder benefit: what drives it, how confident are you, what market share or regulation assumption underpins it? What must happen for the project to reach positive NPV?" style={{minHeight:130}}/></div>
     </div>
 
-    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt}/>
+    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} />
   </div>;
 }
 
@@ -948,10 +1114,15 @@ function S4({st}){
       </div>
     </div>
 
+    <AIConsultant st={st}/>
+
     <div style={{background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 100%)',borderRadius:'var(--r-lg)',padding:'2rem',textAlign:'center',border:'1px solid rgba(198,151,47,0.3)'}}>
       <Logo/>
       <h3 style={{color:'white',fontSize:'1.15rem',marginTop:'1.25rem'}}>Ready to present to your CFO?</h3>
-      <p style={{color:'rgba(255,255,255,0.6)',fontSize:'0.85rem',margin:'0.5rem auto 1.5rem',maxWidth:'440px'}}>Generate an AI-augmented executive memo that synthesises all three stages into a CFO-ready investment recommendation.</p>
+      <p style={{color:'rgba(255,255,255,0.6)',fontSize:'0.85rem',margin:'0.5rem auto 1.5rem',maxWidth:'480px'}}>
+        Generate an AI-augmented executive memo that synthesises your three-stage analysis
+        {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)?', your AI coaching dialogue,':''} and the consultant opinion into a CFO-ready investment recommendation.
+      </p>
       <button className="btn btn-g no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem'}} onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
     </div>
   </div>;
