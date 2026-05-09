@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sustainability Strategy Compass — INSEAD</title>
+<title>Sustainability Strategy Compass</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,19 +11,19 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF0EC;color:#1A1A1A;min-height:100vh}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF2FA;color:#1A1A1A;min-height:100vh}
 :root{
-  --navy:#005C3C; --navy-d:#003D28; --navy-l:#007A52;
-  --blue:#1A8A62; --blue-m:#2BA07A; --blue-l:#E5F2EB;
+  --navy:#004080; --navy-d:#002A5C; --navy-l:#0062B8;
+  --blue:#0070CC; --blue-m:#1A8AD4; --blue-l:#E3EFF9;
   --gold:#C6972F; --gold-l:#F5E9C8; --gold-d:#7A5B14;
-  --cream:#F6FAF8; --cream-d:#E8F2EC; --cream-dd:#DAE9E1;
-  --border:rgba(0,0,0,0.09); --border-m:rgba(0,80,55,0.18);
+  --cream:#F5F8FC; --cream-d:#E6EFF9; --cream-dd:#D5E6F5;
+  --border:rgba(0,0,0,0.09); --border-m:rgba(0,64,128,0.18);
   --r:10px; --r-lg:16px;
   --soc:#2D6A4F; --soc-l:#D8F3DC;
   --eco:#B45309; --eco-l:#FEF3C7;
   --reg:#1565C0; --reg-l:#DBEAFE;
   --inv:#6B21A8; --inv-l:#EDE9FE;
-  --neg:#C0392B; --pos:#005C3C;
+  --neg:#C0392B; --pos:#004080;
 }
 h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;font-weight:600}
 
@@ -276,10 +276,9 @@ async function callClaude(system, messages, maxTokens=600){
   return data.content[0].text;
 }
 
-/* ─── INSEAD LOGO ─── */
+/* ─── LOGO ─── */
 function Logo({dark}){
-  const c=dark?'#005C3C':'white';
-  const sc=dark?'rgba(0,92,60,0.45)':'rgba(255,255,255,0.45)';
+  const c=dark?'#004080':'white';
   return(
     <div style={{display:'flex',alignItems:'center',gap:10}}>
       <svg width="38" height="38" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
@@ -289,10 +288,6 @@ function Logo({dark}){
         <line x1="2.5" y1="22" x2="41.5" y2="22" stroke={c} strokeWidth="1.3"/>
         <line x1="22" y1="2.5" x2="22" y2="41.5" stroke={c} strokeWidth="1.3"/>
       </svg>
-      <div style={{lineHeight:1}}>
-        <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontWeight:700,fontSize:'1.38rem',letterSpacing:'0.22em',color:c}}>INSEAD</div>
-        <div style={{fontSize:'0.57rem',color:sc,letterSpacing:'0.06em',marginTop:2}}>The Business School for the World</div>
-      </div>
     </div>
   );
 }
@@ -310,7 +305,7 @@ function Waterfall({sth,capex,rate,horizon,curr}){
   let run=0;
   const bars=segs.map(s=>{const bot=run;run+=s.value;return{...s,bot,top:run};});
   const total=run;
-  bars.push({label:'NPV+',value:total,bot:0,top:total,color:total>=0?'#1B5E20':'#C0392B',isTotal:true,icon:null});
+  bars.push({label:'NPV+',value:total,bot:0,top:total,color:total>=0?'#0D3B7A':'#C0392B',isTotal:true,icon:null});
   const allv=bars.flatMap(b=>[b.bot,b.top,0]);
   const mn=Math.min(...allv),mx=Math.max(...allv),rng=mx-mn||1;
   const W=560,H=230,ml=8,mr=8,mt=30,mb=48,cW=W-ml-mr,cH=H-mt-mb;
@@ -492,7 +487,7 @@ function AIConsultant({st}){
 
   const generate=async()=>{
     setState('loading');
-    const sysPrompt=`You are a senior sustainability strategy consultant with deep knowledge of business strategy, ESG, and industry dynamics. You have access to web search to research real-world context. Your task is to produce your own independent expert assessment of a sustainability challenge — structured as a three-stage analysis following the INSEAD Business Sustainability Programme framework:
+    const sysPrompt=`You are a senior sustainability strategy consultant with deep knowledge of business strategy, ESG, and industry dynamics. You have access to web search to research real-world context. Your task is to produce your own independent expert assessment of a sustainability challenge — structured as a three-stage analysis following the Business Sustainability Programme framework:
 
 Q1 STAKEHOLDER ANALYSIS: Identify the four stakeholder categories (Nature & Society, Business Ecosystem, Regulators, Financial Institutions & Investors) that are materially relevant for this challenge and industry. For each: who specifically, what the pressure is, business impact, and where the opportunity lies.
 
@@ -502,7 +497,7 @@ Q3 NPV+ PERSPECTIVE: Provide a qualitative NPV+ assessment — which stakeholder
 
 Use web search to gather current, relevant information about the industry, regulation, and comparable cases. Be direct, specific, and evidence-based. Structure your response with clear section headers: ## Q1: Stakeholder Analysis, ## Q2: Strategic Lever Recommendation, ## Q3: NPV+ Perspective. Use **bold** for key points. Be constructive — this is meant to complement and enrich the group's own analysis.`;
 
-    const prompt=`Research and analyse this sustainability challenge for a group in the INSEAD Business Sustainability Programme:
+    const prompt=`Research and analyse this sustainability challenge for a group in the Business Sustainability Programme:
 
 COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'not specified'}
 CHALLENGE: ${st.fish.name||'sustainability challenge'}
@@ -575,12 +570,12 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
   const TABS=[{id:'q1',label:'Q1 · Stakeholders'},{id:'q2',label:'Q2 · Strategy'},{id:'q3',label:'Q3 · NPV+'}];
 
   return(
-    <div style={{background:'linear-gradient(135deg,#003D28 0%,#005C3C 100%)',borderRadius:'var(--r-lg)',border:'1px solid rgba(198,151,47,0.35)',overflow:'hidden',marginBottom:'1.5rem'}}>
+    <div style={{background:'linear-gradient(135deg,#002A5C 0%,#004080 100%)',borderRadius:'var(--r-lg)',border:'1px solid rgba(198,151,47,0.35)',overflow:'hidden',marginBottom:'1.5rem'}}>
       <div style={{padding:'1.75rem 2rem'}}>
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
           <div style={{display:'flex',alignItems:'center',gap:14}}>
             <div style={{width:46,height:46,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <svg width="22" height="22" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#003D28" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#003D28" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#003D28" strokeWidth="1.8"/></svg>
+              <svg width="22" height="22" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#002A5C" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#002A5C" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#002A5C" strokeWidth="1.8"/></svg>
             </div>
             <div>
               <div style={{fontSize:'1.05rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI Consultant Opinion</div>
@@ -606,7 +601,7 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
 
       {state==='done'&&open&&<div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'0 2rem 2rem'}}>
         <div style={{display:'flex',gap:4,marginBottom:'1.25rem',background:'rgba(0,0,0,0.2)',borderRadius:30,padding:4,width:'fit-content'}}>
-          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.35rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',fontWeight:500,background:activeTab===t.id?'var(--gold)':'none',color:activeTab===t.id?'#003D28':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>{t.label}</button>)}
+          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.35rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',fontWeight:500,background:activeTab===t.id?'var(--gold)':'none',color:activeTab===t.id?'#002A5C':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>{t.label}</button>)}
         </div>
         <div style={{maxHeight:420,overflowY:'auto',paddingRight:4}}>
           <ul style={{paddingLeft:'1.2rem'}}>
@@ -638,7 +633,7 @@ function CFOReport({st, onClose}){
 
   const runGenerate=()=>{
     setGenState('loading');
-    const system=`You are a senior management consultant writing a formal CFO-ready executive memo for an INSEAD executive education group presenting a sustainability strategy opportunity. Write in a crisp, precise, investment-grade style. Structured prose — not bullet lists for the main narrative. Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>, <table>, <tr>, <th>, <td>, and one class="highlight-box" div for the executive summary. No markdown, no preamble, no sign-off — output inner HTML only starting with content directly.`;
+    const system=`You are a senior management consultant writing a formal CFO-ready executive memo for an executive education group presenting a sustainability strategy opportunity. Write in a crisp, precise, investment-grade style. Structured prose — not bullet lists for the main narrative. Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>, <table>, <tr>, <th>, <td>, and one class="highlight-box" div for the executive summary. No markdown, no preamble, no sign-off — output inner HTML only starting with content directly.`;
 
     const sthText=activeSth.map(t=>{const tp=STYPES.find(x=>x.id===t.id);return`${tp.label}: Who: ${t.who||'—'} | Pressure: ${t.pressure||'—'} | Impact: ${t.impact||'—'} | Opportunity: ${t.opp||'—'}`;}).join('\n');
     const valText=lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return`${tp.label}: ${l.blabel||l.opp?.slice(0,50)||'benefit'} — ${fmt(l.ann,st.curr)}/year → NPV @5yr: ${fmt(l.ann*af(st.rate,5),st.curr)}, @10yr: ${fmt(l.ann*af(st.rate,10),st.curr)}`;}).join('\n');
@@ -678,7 +673,7 @@ function CFOReport({st, onClose}){
         </div>
         {genState==='needkey'&&(
           <div style={{padding:'2.5rem'}}>
-            <div className="ai-key-setup" style={{background:'#F6FAF8',border:'1px solid rgba(0,92,60,0.15)'}}>
+            <div className="ai-key-setup" style={{background:'#F5F8FC',border:'1px solid rgba(0,64,128,0.15)'}}>
               <p style={{color:'#333'}}>Enter your <strong style={{color:'var(--navy)'}}>Anthropic API key</strong> to generate the AI-augmented CFO report.</p>
               <div className="ai-key-row">
                 <input className="ai-key-input" style={{background:'white',border:'1px solid rgba(0,0,0,0.2)',color:'#333'}} type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
@@ -701,42 +696,41 @@ function CFOReport({st, onClose}){
 @page{margin:2.2cm 2.5cm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.72;color:#111;background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.cover{border-bottom:3px solid #005C3C;padding-bottom:1.4rem;margin-bottom:2rem}
+.cover{border-bottom:3px solid #004080;padding-bottom:1.4rem;margin-bottom:2rem}
 .logo-row{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
-.logo-name{font-family:Georgia,serif;font-weight:700;font-size:1.5rem;letter-spacing:0.22em;color:#005C3C}
+.logo-name{font-family:Georgia,serif;font-weight:700;font-size:1.5rem;letter-spacing:0.22em;color:#004080}
 .logo-tag{font-size:8pt;color:#888;letter-spacing:0.06em;margin-top:2px}
-h1{font-family:Georgia,serif;font-size:15pt;color:#003D28;margin-bottom:0.3rem;font-weight:700}
+h1{font-family:Georgia,serif;font-size:15pt;color:#002A5C;margin-bottom:0.3rem;font-weight:700}
 .meta{font-size:9pt;color:#666;margin-top:0.4rem}
 .ai-note{font-size:8pt;color:#888;margin-top:0.25rem;font-style:italic}
-h3{font-family:Georgia,serif;font-size:11.5pt;color:#003D28;margin:1.5rem 0 0.45rem;padding-bottom:0.3rem;border-bottom:1px solid #C8DED5;font-weight:700}
+h3{font-family:Georgia,serif;font-size:11.5pt;color:#002A5C;margin:1.5rem 0 0.45rem;padding-bottom:0.3rem;border-bottom:1px solid #C0D8EE;font-weight:700}
 p{margin-bottom:0.8rem}
 ul,ol{padding-left:1.4rem;margin-bottom:0.8rem}
 li{margin-bottom:0.22rem}
-strong{color:#003D28;font-weight:700}
-.highlight-box{background:#E5F2EB;border-left:4px solid #005C3C;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:3px}
+strong{color:#002A5C;font-weight:700}
+.highlight-box{background:#E3EFF9;border-left:4px solid #004080;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:3px}
 table{width:100%;border-collapse:collapse;margin:0.8rem 0;font-size:9.5pt}
-th{background:#005C3C;color:white;padding:0.45rem 0.6rem;text-align:left;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-td{padding:0.45rem 0.6rem;border-bottom:1px solid #D0E4DA}
-tr:nth-child(even) td{background:#F2F9F5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C8DED5;font-size:8pt;color:#999;text-align:center}
+th{background:#004080;color:white;padding:0.45rem 0.6rem;text-align:left;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+td{padding:0.45rem 0.6rem;border-bottom:1px solid #D0E0F0}
+tr:nth-child(even) td{background:#EEF4FB;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C0D8EE;font-size:8pt;color:#999;text-align:center}
 </style></head><body>
 <div class="cover">
   <div class="logo-row">
     <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
-      <circle cx="22" cy="22" r="19.5" stroke="#005C3C" stroke-width="2"/>
-      <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#005C3C" stroke-width="1.3"/>
-      <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="#005C3C" stroke-width="1.3"/>
-      <line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#005C3C" stroke-width="1.3"/>
-      <line x1="22" y1="2.5" x2="22" y2="41.5" stroke="#005C3C" stroke-width="1.3"/>
+      <circle cx="22" cy="22" r="19.5" stroke="#004080" stroke-width="2"/>
+      <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#004080" stroke-width="1.3"/>
+      <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="#004080" stroke-width="1.3"/>
+      <line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#004080" stroke-width="1.3"/>
+      <line x1="22" y1="2.5" x2="22" y2="41.5" stroke="#004080" stroke-width="1.3"/>
     </svg>
-    <div><div class="logo-name">INSEAD</div><div class="logo-tag">The Business School for the World</div></div>
   </div>
   <h1>Sustainability Strategy Opportunity: ${(st.fish.name||'Challenge Assessment').replace(/</g,'&lt;')}</h1>
   <div class="meta">Prepared by: ${(st.grp.name||'Executive Team').replace(/</g,'&lt;')}${st.grp.industry?' · '+st.grp.industry.replace(/</g,'&lt;'):''} &nbsp;·&nbsp; ${date}</div>
   ${chatCount>0?`<div class="ai-note">This report incorporates insights from ${chatCount} AI coaching exchange${chatCount>1?'s':''} across the three stages of analysis.</div>`:''}
 </div>
 ${html}
-<footer>© Atalay Atasu &amp; Karel Cool &nbsp;·&nbsp; INSEAD Business Sustainability Programme &nbsp;·&nbsp; ${date}</footer>
+<footer>© Atalay Atasu &amp; Karel Cool &nbsp;·&nbsp; Business Sustainability Programme &nbsp;·&nbsp; ${date}</footer>
 </body></html>`);
             win.document.close();
             win.focus();
@@ -761,8 +755,7 @@ function Sidebar({step,setStep}){
         return<div key={it.id}>{ns&&<><div className="sb-div"/><div className="sb-lbl">{it.sec}</div></>}<div className={`sb-item ${a?'active':''} ${d?'done':''}`} onClick={()=>(d||a)&&setStep(it.id)}><div className="sb-dot">{d?'✓':it.id===0||it.id===4?'◆':it.id}</div>{it.lbl}</div></div>;
       })}
       <div style={{padding:'1.25rem 1.5rem',marginTop:'auto',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:'0.9rem',letterSpacing:'0.2em',color:'rgba(255,255,255,0.18)',marginBottom:'0.5rem'}}>INSEAD</div>
-        <div style={{fontSize:'0.62rem',color:'rgba(255,255,255,0.2)',lineHeight:1.5}}>© Atalay Atasu & Karel Cool<br/>INSEAD Business Sustainability Programme</div>
+        <div style={{fontSize:'0.62rem',color:'rgba(255,255,255,0.2)',lineHeight:1.5}}>© Atalay Atasu & Karel Cool<br/>Business Sustainability Programme</div>
       </div>
     </nav>
   );
@@ -776,7 +769,7 @@ function S0({st,set}){
     <div className="card" style={{textAlign:'center',paddingBottom:'2rem'}}>
       <div className="card-watermark">© Atasu & Cool</div>
       <div style={{display:'flex',justifyContent:'center',marginBottom:'1.5rem'}}><Logo dark/></div>
-      <div className="ey" style={{display:'flex',justifyContent:'center'}}>INSEAD Business Sustainability Programme</div>
+      <div className="ey" style={{display:'flex',justifyContent:'center'}}>Business Sustainability Programme</div>
       <h2 className="ctitle" style={{fontSize:'2rem',marginTop:'0.25rem'}}>Sustainability Strategy Compass</h2>
       <p className="csub" style={{margin:'0.75rem auto 0',textAlign:'center'}}>Identify your sustainability disruptor, map its stakeholders, build a strategic response, and quantify the value — with AI coaching at every stage.</p>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'1rem',margin:'2rem auto 0',maxWidth:'580px'}}>
@@ -817,7 +810,7 @@ function S1({st,set}){
   const tog=id=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,on:!x.on}:x)}));
   const upd=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
 
-  const sysPrompt=`You are a sustainability strategy professor at INSEAD facilitating an executive education session on stakeholder analysis. Review the group's work with intellectual rigor. Challenge vague answers. Identify gaps. Reference real companies (Unilever, BASF, Ørsted, Nestlé, Volkswagen, Patagonia, Apple, etc.) relevant to their industry context. Be concise and executive-level — use numbered points. Limit each response to 200 words.`;
+  const sysPrompt=`You are a sustainability strategy professor facilitating an executive education session on stakeholder analysis. Review the group's work with intellectual rigor. Challenge vague answers. Identify gaps. Reference real companies (Unilever, BASF, Ørsted, Nestlé, Volkswagen, Patagonia, Apple, etc.) relevant to their industry context. Be concise and executive-level — use numbered points. Limit each response to 200 words.`;
 
   const buildPrompt=()=>{
     const actv=st.sth.filter(x=>x.on);
@@ -865,7 +858,7 @@ function S2({st,set}){
   const upd=(k,v)=>set(s=>({...s,[k]:v}));
   const showSeg=st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo';
 
-  const sysPrompt=`You are a sustainability strategy professor at INSEAD reviewing strategic lever choices. Challenge vague lever selections. Test whether the market segment is sufficiently specific. Ask about competitive dynamics and second-order effects. Reference real strategic pivots by companies (e.g. Ørsted from oil to wind, Unilever's Sustainable Living brands, Interface's Mission Zero). Be direct. 200 words max.`;
+  const sysPrompt=`You are a sustainability strategy professor reviewing strategic lever choices. Challenge vague lever selections. Test whether the market segment is sufficiently specific. Ask about competitive dynamics and second-order effects. Reference real strategic pivots by companies (e.g. Ørsted from oil to wind, Unilever's Sustainable Living brands, Interface's Mission Zero). Be direct. 200 words max.`;
 
   const buildPrompt=()=>{
     const linfo=LEVERS.find(l=>l.id===st.lever);
@@ -922,7 +915,7 @@ function S3({st,set}){
   const npv5=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,5),0);
   const npv10=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,10),0);
 
-  const sysPrompt=`You are a sustainability strategy professor and former investment banker at INSEAD reviewing a group's NPV+ financial model. Challenge assumptions aggressively but constructively. Ask: What is driving that number? What would a skeptical CFO push back on? What is the single biggest assumption risk? Reference a comparable deal or investment case (e.g. Ørsted wind, Plastic Energy, Interface recycled carpets, Renault EV). 200 words max.`;
+  const sysPrompt=`You are a sustainability strategy professor and former investment banker reviewing a group's NPV+ financial model. Challenge assumptions aggressively but constructively. Ask: What is driving that number? What would a skeptical CFO push back on? What is the single biggest assumption risk? Reference a comparable deal or investment case (e.g. Ørsted wind, Plastic Energy, Interface recycled carpets, Renault EV). 200 words max.`;
 
   const buildPrompt=()=>{
     const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(parseFloat(x.annual)||0,cur)}/year`;}).join('\n');
@@ -1000,7 +993,6 @@ Challenge this financial model. What assumptions are most fragile? What is the s
     <div className="wf">
       <div className="wf-hd">
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:'0.85rem',letterSpacing:'0.18em',color:'rgba(255,255,255,0.2)'}}>INSEAD</div>
           <div className="wf-ttl">NPV+ Waterfall</div>
         </div>
         <div className="htabs">{[5,10].map(h=><button key={h} className={`htab ${vh===h?'on':''}`} onClick={()=>setVh(h)}>{h}-year</button>)}</div>
@@ -1140,7 +1132,7 @@ function App(){
       <div className="hdr-brand">
         <Logo/>
         <div className="hdr-sep"/>
-        <div><div className="hdr-title">Sustainability Strategy Compass</div><div className="hdr-sub">INSEAD Business Sustainability Programme</div></div>
+        <div><div className="hdr-title">Sustainability Strategy Compass</div><div className="hdr-sub">Business Sustainability Programme</div></div>
       </div>
       {(st.grp.name||st.fish.name)&&<div className="hdr-grp">{[st.grp.name,st.fish.name].filter(Boolean).join(' · ')}</div>}
     </header>
