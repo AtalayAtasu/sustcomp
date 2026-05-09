@@ -164,13 +164,13 @@ app.get('/admin/test-email', requireAdmin, async (req, res) => {
       },
       body: JSON.stringify({
         from:    'SustComp <onboarding@resend.dev>',
-        to:      ['atalay.atasu@gmail.com'],
+        to:      ['atalay.atasu@googlemail.com'],
         subject: '[SustComp] Test email — Resend configured OK',
         html:    '<p>If you received this, Resend is working correctly for SustComp.</p>'
       })
     });
     if (!r.ok) { const e = await r.json(); throw new Error(e.message || `Resend error ${r.status}`); }
-    res.send('<p style="font-family:sans-serif;padding:2rem">✅ Test email sent to atalay.atasu@gmail.com — check your inbox (and spam).<br><br><a href="/admin">← Back to admin</a></p>');
+    res.send('<p style="font-family:sans-serif;padding:2rem">✅ Test email sent to atalay.atasu@googlemail.com — check your inbox (and spam).<br><br><a href="/admin">← Back to admin</a></p>');
   } catch (e) {
     res.status(500).send(`<p style="font-family:sans-serif;padding:2rem;color:red">❌ Email failed:<br><br><code>${e.message}</code><br><br><a href="/admin">← Back to admin</a></p>`);
   }
@@ -430,7 +430,7 @@ async function sendEmail(d) {
     },
     body: JSON.stringify({
       from:    'SustComp <onboarding@resend.dev>',
-      to:      ['atalay.atasu@gmail.com'],
+      to:      ['atalay.atasu@googlemail.com'],
       subject: `[SustComp] ${d.cohortName || 'No cohort'} — ${d.username} — ${d.challengeName || 'Submission'}`,
       html:    body,
       attachments: [{
@@ -486,7 +486,7 @@ function loginHTML(error = '') {
     <button class="btn" type="submit">Sign in →</button>
   </form>
   <div class="footer">© 2026 AcpitConsulting<br>
-    <a href="mailto:atalay.atasu@gmail.com">atalay.atasu@gmail.com</a></div>
+    <a href="mailto:atalay.atasu@googlemail.com">atalay.atasu@googlemail.com</a></div>
 </div></body></html>`;
 }
 
