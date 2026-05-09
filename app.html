@@ -1129,7 +1129,10 @@ function App(){
       <div className="hdr-brand">
         <div><div className="hdr-title">Sustainability Strategy Compass</div></div>
       </div>
-      {(st.grp.name||st.fish.name)&&<div className="hdr-grp">{[st.grp.name,st.fish.name].filter(Boolean).join(' · ')}</div>}
+      <div style={{display:'flex',alignItems:'center',gap:'1.25rem'}}>
+        {(st.grp.name||st.fish.name)&&<div className="hdr-grp">{[st.grp.name,st.fish.name].filter(Boolean).join(' · ')}</div>}
+        <a href="/logout" style={{fontSize:'0.75rem',color:'rgba(255,255,255,0.45)',textDecoration:'none',borderLeft:'1px solid rgba(255,255,255,0.15)',paddingLeft:'1.25rem'}} onMouseOver={e=>e.target.style.color='rgba(255,255,255,0.8)'} onMouseOut={e=>e.target.style.color='rgba(255,255,255,0.45)'}>Sign out</a>
+      </div>
     </header>
     <div className="body">
       <Sidebar step={step} setStep={setStep}/>
