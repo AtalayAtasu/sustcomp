@@ -261,8 +261,13 @@ app.post('/api/submit', requireLogin, async (req, res) => {
        d.npv5||0, d.npv10||0, d.rate||0,
        d.currency||'EUR', d.reportHtml||'']);
 
-    await sendEmail({ ...d, username: u.username, cohortName: u.cohortName });
     res.json({ success: true });
+
+    // Send email in background — don't let email failure block the submission
+    sendEmail({ ...d, username: u.username, cohortName: u.cohortName })
+      .then(() => console.log(`Email sent for ${u.username}`))
+      .catch(e => console.error('Email failed for', u.username, ':', e.message));
+
   } catch (e) {
     console.error('Submit error:', e);
     res.status(500).json({ error: e.message });
@@ -271,6 +276,9 @@ app.post('/api/submit', requireLogin, async (req, res) => {
 
 // ── EMAIL ──────────────────────────────────────────────────────────────────
 
+if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+  console.warn('WARNING: GMAIL_USER or GMAIL_PASS not set — submission emails will fail');
+}
 const mailer = nodemailer.createTransport({
   service: 'gmail',
   auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
