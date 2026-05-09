@@ -257,6 +257,15 @@ app.get('/admin/submissions/:id/report', requireAdmin, async (req, res) => {
   res.type('html').send(r.rows[0].report_html || '<p>No report content saved.</p>');
 });
 
+app.post('/admin/submissions/:id/delete', requireAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM submissions WHERE id=$1', [req.params.id]);
+    res.redirect('/admin?msg=Submission+deleted');
+  } catch (e) {
+    res.redirect('/admin?msg=Delete+failed:+' + encodeURIComponent(e.message));
+  }
+});
+
 // ── MAIN APP ───────────────────────────────────────────────────────────────
 
 app.get('/', requireLogin, (req, res) => {
@@ -602,7 +611,12 @@ function adminHTML(cohorts, users, submissions, msg) {
       <td>${s.group_name || '—'}</td>
       <td>${s.challenge_name || '—'}</td>
       <td>${fmtDt(s.submitted_at)}</td>
-      <td><a href="/admin/submissions/${s.id}/report" target="_blank" class="view-link">View →</a></td>
+      <td style="display:flex;gap:0.5rem;align-items:center">
+        <a href="/admin/submissions/${s.id}/report" target="_blank" class="view-link">View →</a>
+        <form method="POST" action="/admin/submissions/${s.id}/delete" style="margin:0" onsubmit="return confirm('Delete this submission? This cannot be undone.')">
+          <button type="submit" style="background:none;border:1px solid #e88;color:#c33;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;font-family:inherit">Delete</button>
+        </form>
+      </td>
     </tr>`).join('') || `<tr><td colspan="6" class="empty">No submissions yet</td></tr>`;
 
   return `<!DOCTYPE html><html lang="en"><head>
