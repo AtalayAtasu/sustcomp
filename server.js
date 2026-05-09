@@ -153,6 +153,21 @@ app.get('/admin/logout', (req, res) => {
 
 // ── ADMIN PANEL ────────────────────────────────────────────────────────────
 
+// Test email route — visit /admin/test-email to check credentials work
+app.get('/admin/test-email', requireAdmin, async (req, res) => {
+  try {
+    await mailer.sendMail({
+      from: `"SustComp Test" <${process.env.GMAIL_USER}>`,
+      to:   'atalay.atasu@gmail.com',
+      subject: '[SustComp] Test email — credentials OK',
+      text: 'If you received this, your Gmail credentials are working correctly.'
+    });
+    res.send('<p style="font-family:sans-serif;padding:2rem">✅ Test email sent successfully to atalay.atasu@gmail.com — check your inbox (and spam).<br><br><a href="/admin">← Back to admin</a></p>');
+  } catch (e) {
+    res.status(500).send(`<p style="font-family:sans-serif;padding:2rem;color:red">❌ Email failed:<br><br><code>${e.message}</code><br><br><a href="/admin">← Back to admin</a></p>`);
+  }
+});
+
 app.get('/admin', requireAdmin, async (req, res) => {
   try {
     const [cohortsR, usersR, subsR] = await Promise.all([
@@ -278,9 +293,13 @@ app.post('/api/submit', requireLogin, async (req, res) => {
 
 if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
   console.warn('WARNING: GMAIL_USER or GMAIL_PASS not set — submission emails will fail');
+} else {
+  console.log('Email configured for:', process.env.GMAIL_USER);
 }
 const mailer = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
 });
 
