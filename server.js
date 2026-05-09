@@ -81,7 +81,7 @@ app.get('/admin/logout', (req, res) => {
 // ── APP ────────────────────────────────────────────────────────────────────
 
 app.get('/', requireLogin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'app.html'));
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

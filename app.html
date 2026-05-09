@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sustainability Strategy Compass</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF2FA;color:#1A1A1A;min-height:100vh}
+:root{
+  --navy:#004080; --navy-d:#002A5C; --navy-l:#0062B8;
+  --blue:#0070CC; --blue-m:#1A8AD4; --blue-l:#E3EFF9;
+  --gold:#C6972F; --gold-l:#F5E9C8; --gold-d:#7A5B14;
+  --cream:#F5F8FC; --cream-d:#E6EFF9; --cream-dd:#D5E6F5;
+  --border:rgba(0,0,0,0.09); --border-m:rgba(0,64,128,0.18);
+  --r:10px; --r-lg:16px;
+  --soc:#2D6A4F; --soc-l:#D8F3DC;
+  --eco:#B45309; --eco-l:#FEF3C7;
+  --reg:#1565C0; --reg-l:#DBEAFE;
+  --inv:#6B21A8; --inv-l:#EDE9FE;
+  --neg:#C0392B; --pos:#004080;
+}
+h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;font-weight:600}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.hdr{background:var(--navy);color:white;padding:0 2.5rem;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--gold)}
+.hdr-brand{display:flex;align-items:center;gap:16px}
+.insead-logo{display:flex;flex-direction:column;line-height:1}
+.insead-logo .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:1.45rem;letter-spacing:0.2em;color:white}
+.insead-logo .tag{font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.06em;margin-top:2px}
+.hdr-sep{width:1px;height:32px;background:rgba(255,255,255,0.2)}
+.hdr-title{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:rgba(255,255,255,0.9)}
+.hdr-sub{font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:1px}
+.hdr-grp{font-size:0.78rem;color:rgba(255,255,255,0.5)}
+.body{display:flex;flex:1}
+
+/* SIDEBAR */
+.sb{width:220px;background:var(--navy-d);color:white;padding:1.75rem 0;flex-shrink:0;position:sticky;top:66px;height:calc(100vh - 66px);overflow-y:auto}
+.sb-lbl{font-size:0.6rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:0.85rem 1.5rem 0.35rem}
+.sb-item{display:flex;align-items:center;gap:9px;padding:0.52rem 1.4rem;cursor:pointer;font-size:0.8rem;color:rgba(255,255,255,0.45);border-left:3px solid transparent;transition:all 0.15s}
+.sb-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+.sb-item.active{background:rgba(255,255,255,0.1);color:white;border-left-color:var(--gold)}
+.sb-item.done{color:rgba(255,255,255,0.6)}
+.sb-dot{width:17px;height:17px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}
+.sb-item.active .sb-dot{border-color:var(--gold);background:var(--gold);color:var(--navy);font-weight:700}
+.sb-item.done .sb-dot{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);color:white}
+.sb-div{height:1px;background:rgba(255,255,255,0.06);margin:0.5rem 1.4rem}
+.sb-logo{padding:1.5rem;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto}
+.sb-logo .word{font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;letter-spacing:0.18em;color:rgba(255,255,255,0.25)}
+
+/* MAIN */
+.main{flex:1;padding:2.5rem 3rem;max-width:900px;margin:0 auto;width:100%}
+.card{background:var(--cream);border-radius:var(--r-lg);padding:2.25rem;border:1px solid var(--border);margin-bottom:1.5rem;position:relative;overflow:hidden}
+.card-watermark{position:absolute;top:1.2rem;right:1.5rem;font-family:'Playfair Display',serif;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;color:rgba(0,33,71,0.08);user-select:none}
+.ey{font-size:0.67rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-d);margin-bottom:0.5rem}
+.ctitle{font-size:1.6rem;color:var(--navy);margin-bottom:0.45rem;line-height:1.25}
+.csub{font-size:0.875rem;color:#5C5C5C;line-height:1.65;max-width:640px}
+.divl{height:1px;background:var(--border);margin:1.75rem 0}
+.fld{margin-bottom:1.35rem}
+.fld label{display:block;font-size:0.79rem;font-weight:500;color:#1A1A1A;margin-bottom:0.38rem}
+.fld-hint{font-size:0.74rem;color:#909090;margin-top:0.28rem;line-height:1.5}
+input[type=text],input[type=number],select,textarea{width:100%;padding:0.56rem 0.8rem;border:1px solid var(--border-m);border-radius:var(--r);font-family:inherit;font-size:0.875rem;color:#1A1A1A;background:white;transition:border 0.15s,box-shadow 0.15s;outline:none}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--blue-m);box-shadow:0 0 0 3px rgba(0,84,166,0.1)}
+textarea{resize:vertical;line-height:1.6;min-height:88px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23909090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.8rem center}
+input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+
+/* STAKEHOLDER CARDS */
+.sc{border-radius:var(--r-lg);overflow:hidden;border:1.5px solid var(--border-m);margin-bottom:0.875rem}
+.sc-hd{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;cursor:pointer;user-select:none}
+.sc-hl{display:flex;align-items:center;gap:10px}
+.sc-ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.sc-nm{font-size:0.88rem;font-weight:500}
+.sc-ds{font-size:0.74rem;color:#7a7a7a;margin-top:1px}
+.tgl{width:40px;height:22px;border-radius:11px;background:#D1D5DB;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.tgl-k{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.sc-body{padding:0 1.25rem 1.25rem;background:white}
+
+/* LEVER CARDS */
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem}
+.lc{border:1.5px solid var(--border-m);border-radius:var(--r);padding:0.875rem 1rem;cursor:pointer;transition:all 0.15s;background:white;text-align:left}
+.lc:hover,.lc.sel{border-color:var(--blue-m);background:var(--blue-l)}
+.lc.sel{box-shadow:0 0 0 3px rgba(0,84,166,0.1)}
+.lt{display:inline-block;font-size:0.65rem;font-weight:500;padding:2px 7px;border-radius:20px;margin-bottom:0.38rem}
+.ltt{font-size:0.85rem;font-weight:500;color:var(--navy);margin-bottom:0.18rem}
+.ld{font-size:0.75rem;color:#666;line-height:1.5}
+
+/* NPV LINES */
+.nl{background:white;border:1px solid var(--border);border-radius:var(--r);margin-bottom:0.75rem;overflow:hidden}
+.nl-hd{display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.1rem}
+.nl-left{display:flex;align-items:center;gap:10px}
+.nl-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0}
+.nl-nm{font-size:0.84rem;font-weight:500}
+.nl-sub{font-size:0.73rem;color:#888;margin-top:1px}
+.nl-val{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.nl-body{padding:0 1.1rem 1rem;border-top:1px solid var(--border)}
+
+/* WATERFALL */
+.wf{background:var(--navy);border-radius:var(--r-lg);padding:1.5rem;margin:1.5rem 0;border:1px solid rgba(198,151,47,0.3)}
+.wf-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.wf-ttl{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.htabs{display:flex;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px}
+.htab{font-size:0.76rem;padding:0.28rem 0.85rem;border-radius:16px;cursor:pointer;color:rgba(255,255,255,0.5);transition:all 0.15s;border:none;background:none;font-family:inherit}
+.htab.on{background:var(--gold);color:var(--navy);font-weight:500}
+.npv3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.875rem}
+.npv3b{background:rgba(255,255,255,0.08);border-radius:8px;padding:0.875rem 1rem;text-align:center}
+.npv3l{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:0.3rem}
+.npv3v{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;color:white}
+.npv3v.pos{color:#A8E6CF} .npv3v.neg{color:#FC9D9D} .npv3v.gld{color:var(--gold)}
+
+/* AI PANEL */
+.ai-panel{background:linear-gradient(135deg,#001530 0%,#002A5C 100%);border-radius:var(--r-lg);border:1px solid rgba(198,151,47,0.25);margin-top:1.5rem;overflow:hidden}
+.ai-panel-hd{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;cursor:pointer}
+.ai-panel-hd-left{display:flex;align-items:center;gap:10px}
+.ai-avatar{width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-avatar svg{width:18px;height:18px;fill:var(--navy)}
+.ai-panel-ttl{font-size:0.88rem;font-weight:500;color:white}
+.ai-panel-sub{font-size:0.73rem;color:rgba(255,255,255,0.45);margin-top:1px}
+.ai-chevron{color:rgba(255,255,255,0.4);font-size:0.8rem;transition:transform 0.2s}
+.ai-chevron.open{transform:rotate(180deg)}
+.ai-body{padding:0 1.5rem 1.5rem;border-top:1px solid rgba(255,255,255,0.08)}
+.ai-trigger-btn{display:flex;align-items:center;gap:8px;background:var(--gold);color:var(--navy);border:none;padding:0.65rem 1.35rem;border-radius:var(--r);font-family:inherit;font-size:0.85rem;font-weight:500;cursor:pointer;margin-top:1.25rem;transition:all 0.15s}
+.ai-trigger-btn:hover{background:#D4A835}
+.ai-trigger-btn:disabled{opacity:0.5;cursor:not-allowed}
+.chat-messages{max-height:420px;overflow-y:auto;margin-top:1.25rem;display:flex;flex-direction:column;gap:1rem}
+.chat-msg{display:flex;gap:10px;align-items:flex-start}
+.chat-msg.user{flex-direction:row-reverse}
+.chat-bubble{max-width:85%;padding:0.75rem 1rem;border-radius:var(--r-lg);font-size:0.85rem;line-height:1.65}
+.chat-bubble.ai{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.9);border-radius:4px 16px 16px 16px}
+.chat-bubble.user{background:var(--gold);color:var(--navy);border-radius:16px 4px 16px 16px;font-weight:500}
+.chat-bubble.ai h4{font-family:'Playfair Display',serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.4rem}
+.chat-bubble.ai strong{color:rgba(255,255,255,0.95)}
+.chat-bubble.ai ul,.chat-bubble.ai ol{padding-left:1.25rem;margin:0.5rem 0}
+.chat-bubble.ai li{margin-bottom:0.3rem}
+.chat-bubble.ai p{margin-bottom:0.5rem}
+.chat-bubble.ai p:last-child{margin-bottom:0}
+.mini-av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:600}
+.mini-av.ai{background:var(--gold);color:var(--navy)}
+.mini-av.usr{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8)}
+.chat-input-row{display:flex;gap:8px;margin-top:1rem}
+.chat-input{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);padding:0.6rem 0.9rem;color:white;font-family:inherit;font-size:0.85rem;outline:none}
+.chat-input::placeholder{color:rgba(255,255,255,0.3)}
+.chat-input:focus{border-color:var(--gold);background:rgba(255,255,255,0.12)}
+.chat-send{background:var(--blue);color:white;border:none;padding:0.6rem 1.1rem;border-radius:var(--r);font-family:inherit;font-size:0.82rem;font-weight:500;cursor:pointer}
+.chat-send:hover{background:var(--navy-l)}
+.chat-send:disabled{opacity:0.4;cursor:not-allowed}
+.typing{display:flex;gap:4px;align-items:center;padding:0.5rem 0}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.4);animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:0.2s}.dot:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0.3}40%{opacity:1}}
+.ai-limit{font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:0.5rem;text-align:center}
+.ai-key-setup{background:rgba(255,255,255,0.06);border:1px solid rgba(198,151,47,0.3);border-radius:var(--r);padding:1.1rem 1.25rem;margin-top:1.25rem}
+.ai-key-setup p{font-size:0.82rem;color:rgba(255,255,255,0.65);line-height:1.55;margin-bottom:0.75rem}
+.ai-key-setup p strong{color:var(--gold)}
+.ai-key-row{display:flex;gap:8px}
+.ai-key-input{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:var(--r);padding:0.56rem 0.85rem;color:white;font-family:inherit;font-size:0.82rem;outline:none;letter-spacing:0.05em}
+.ai-key-input:focus{border-color:var(--gold)}
+.ai-key-input::placeholder{color:rgba(255,255,255,0.25);letter-spacing:0}
+.ai-key-btn{background:var(--gold);color:var(--navy);border:none;padding:0.56rem 1.1rem;border-radius:var(--r);font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.ai-key-btn:hover{filter:brightness(1.08)}
+.ai-key-note{font-size:0.7rem;color:rgba(255,255,255,0.25);margin-top:0.6rem;line-height:1.5}
+
+/* CFO REPORT */
+.report-overlay{position:fixed;inset:0;background:rgba(0,21,48,0.85);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto}
+.report-doc{background:white;max-width:800px;width:100%;border-radius:var(--r-lg);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.report-doc-hd{background:var(--navy);color:white;padding:2rem 2.5rem;position:relative}
+.report-doc-hd .insead-logo .word{font-size:1.2rem}
+.report-doc-hd .insead-logo .tag{color:rgba(255,255,255,0.4)}
+.report-doc-hd h2{font-size:1.4rem;margin-top:1.25rem;line-height:1.3;color:white}
+.report-doc-hd .meta{font-size:0.8rem;color:rgba(255,255,255,0.5);margin-top:0.5rem}
+.report-doc-hd .gold-line{height:2px;background:var(--gold);margin-top:1.5rem}
+.report-body{padding:2rem 2.5rem;font-size:0.9rem;line-height:1.75;color:#1A1A1A}
+.report-body h3{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy);margin:1.5rem 0 0.5rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem}
+.report-body h3:first-child{margin-top:0}
+.report-body p{margin-bottom:0.875rem}
+.report-body ul,.report-body ol{padding-left:1.5rem;margin-bottom:0.875rem}
+.report-body li{margin-bottom:0.3rem}
+.report-body strong{color:var(--navy);font-weight:600}
+.report-body .highlight-box{background:var(--blue-l);border-left:3px solid var(--blue);padding:1rem 1.25rem;border-radius:0 var(--r) var(--r) 0;margin:1rem 0}
+.report-body table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem}
+.report-body th{background:var(--navy);color:white;padding:0.5rem 0.75rem;text-align:left;font-weight:500;font-size:0.78rem}
+.report-body td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border)}
+.report-actions{padding:1.5rem 2.5rem;background:var(--cream);border-top:1px solid var(--border);display:flex;gap:0.875rem}
+.loading-report{padding:4rem;text-align:center}
+.loading-report .spin{width:40px;height:40px;border:3px solid var(--border-m);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-report p{color:var(--navy);font-size:0.9rem}
+.loading-report .sub{color:#888;font-size:0.8rem;margin-top:0.25rem}
+
+/* SUMMARY */
+.sum-sec{background:var(--cream);border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem}
+.sum-sec-hd{background:var(--navy);color:white;padding:1rem 1.75rem;display:flex;align-items:center;justify-content:space-between}
+.sum-sec-hd h3{color:white;font-size:1rem;margin-top:0.2rem}
+.sum-sec-ey{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.38)}
+.sum-sec-body{padding:1.25rem 1.75rem}
+.stbl{width:100%;font-size:0.83rem;border-collapse:collapse}
+.stbl th{text-align:left;padding:0.4rem 0.5rem;font-size:0.68rem;color:#999;font-weight:500;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em}
+.stbl td{padding:0.5rem;border-bottom:1px solid var(--border)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0.56rem 1.3rem;border-radius:var(--r);font-family:inherit;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.15s;border:none}
+.btn-p{background:var(--navy);color:white} .btn-p:hover{background:var(--navy-l)}
+.btn-s{background:white;color:var(--navy);border:1.5px solid var(--border-m)} .btn-s:hover{background:var(--cream-d)}
+.btn-g{background:var(--gold);color:var(--navy)} .btn-g:hover{filter:brightness(1.08)}
+.btn-report{background:var(--blue);color:white} .btn-report:hover{background:var(--navy-l)}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:1.1rem 3rem;background:var(--cream);border-top:1px solid var(--border);position:sticky;bottom:0;z-index:50}
+.nav-info{font-size:0.77rem;color:#999}
+
+@media print{
+  .sb,.hdr,.nav,.no-print{display:none!important}
+  body{background:white} .main{max-width:100%;padding:1rem 2rem}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useRef, useEffect} = React;
+
+/* ─── CONSTANTS ─── */
+const STYPES = [
+  {id:'soc',icon:'🌿',label:'Nature & Society',      desc:'NGOs, communities, environment, biodiversity',      mid:'#2D6A4F',light:'#D8F3DC'},
+  {id:'eco',icon:'📈',label:'Business Ecosystem',    desc:'Suppliers, customers, value chain, industry peers', mid:'#B45309',light:'#FEF3C7'},
+  {id:'reg',icon:'🏛️',label:'Regulators',            desc:'Governments, policy makers, standards bodies',      mid:'#1565C0',light:'#DBEAFE'},
+  {id:'inv',icon:'💼',label:'Financial Institutions & Investors',desc:'Shareholders, banks, ESG funds, rating agencies',mid:'#6B21A8',light:'#EDE9FE'},
+];
+const LEVERS=[
+  {id:'cost',tag:'Cost',   label:'Cost Reduction',  desc:'Sustainability lowers operating costs, improves margins',bg:'#FFF3E0',tc:'#B45309'},
+  {id:'wtp', tag:'WTP',   label:'WTP Creation',    desc:'Customers pay a premium for sustainable offerings',   bg:'#D8F3DC',tc:'#2D6A4F'},
+  {id:'mkt', tag:'Market',label:'Market Creation', desc:'New customer segments emerge from the disruption',    bg:'#DBEAFE',tc:'#1565C0'},
+  {id:'combo',tag:'Combined',label:'Combination',  desc:'Two or three levers working in parallel',             bg:'#F6EDCC',tc:'#8B6414'},
+];
+const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
+const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]}});
+
+/* ─── HELPERS ─── */
+function fmt(n,c){
+  if(n===''||n===null||n===undefined)return'—';
+  const v=parseFloat(n);if(isNaN(v))return'—';
+  const sg=v<0?'−':'';const a=Math.abs(v);
+  let s;if(a>=1e9)s=(a/1e9).toFixed(1)+'B';else if(a>=1e6)s=(a/1e6).toFixed(1)+'M';else if(a>=1e3)s=(a/1e3).toFixed(0)+'K';else s=Math.round(a).toString();
+  return`${sg}${c} ${s}`;
+}
+function af(r,n){const rr=r/100;return rr===0?n:(1-Math.pow(1+rr,-n))/rr;}
+
+/* ─── API KEY (module-level, set once per session) ─── */
+let _apiKey = '';
+function getApiKey(){ return _apiKey; }
+function setApiKey(k){ _apiKey = k.trim(); }
+
+/* ─── AI CALL ─── */
+async function callClaude(system, messages, maxTokens=600){
+  if(!_apiKey) throw new Error('NO_KEY');
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'content-type':'application/json',
+      'x-api-key': _apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,system,messages})
+  });
+  const data=await resp.json();
+  if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
+  if(data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+
+/* ─── LOGO ─── */
+function Logo({dark}){
+  const c=dark?'#004080':'white';
+  return(
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <svg width="38" height="38" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+        <circle cx="22" cy="22" r="19.5" stroke={c} strokeWidth="2"/>
+        <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke={c} strokeWidth="1.3"/>
+        <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke={c} strokeWidth="1.3"/>
+        <line x1="2.5" y1="22" x2="41.5" y2="22" stroke={c} strokeWidth="1.3"/>
+        <line x1="22" y1="2.5" x2="22" y2="41.5" stroke={c} strokeWidth="1.3"/>
+      </svg>
+    </div>
+  );
+}
+
+/* ─── WATERFALL ─── */
+function Waterfall({sth,capex,rate,horizon,curr}){
+  const cap=parseFloat(capex)||0;
+  const segs=[];
+  if(cap>0)segs.push({label:'CAPEX',value:-cap,color:'#C0392B',icon:null});
+  sth.filter(x=>x.on&&parseFloat(x.annual)>0).forEach(x=>{
+    const t=STYPES.find(t=>t.id===x.id);
+    segs.push({label:t.label.split(' ')[0],value:parseFloat(x.annual)*af(rate,horizon),color:t.mid,icon:t.icon});
+  });
+  if(!segs.length)return<div style={{textAlign:'center',padding:'2rem',color:'rgba(255,255,255,0.22)',fontSize:'0.82rem'}}>Enter annual benefit values above to see the NPV+ waterfall</div>;
+  let run=0;
+  const bars=segs.map(s=>{const bot=run;run+=s.value;return{...s,bot,top:run};});
+  const total=run;
+  bars.push({label:'NPV+',value:total,bot:0,top:total,color:total>=0?'#0D3B7A':'#C0392B',isTotal:true,icon:null});
+  const allv=bars.flatMap(b=>[b.bot,b.top,0]);
+  const mn=Math.min(...allv),mx=Math.max(...allv),rng=mx-mn||1;
+  const W=560,H=230,ml=8,mr=8,mt=30,mb=48,cW=W-ml-mr,cH=H-mt-mb;
+  const n=bars.length,bw=Math.min(56,cW/n*0.58),gap=cW/n;
+  const toY=v=>mt+cH*(1-(v-mn)/rng);
+  const bx=i=>ml+i*gap+(gap-bw)/2;
+  const z0=toY(0);
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}}>
+      <line x1={ml} x2={W-mr} y1={z0} y2={z0} stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="4,3"/>
+      {bars.map((b,i)=>{
+        const y1=toY(Math.max(b.bot,b.top)),y2=toY(Math.min(b.bot,b.top)),bh=Math.max(y2-y1,3),cx=bx(i)+bw/2,isNeg=b.value<0;
+        return(
+          <g key={i}>
+            {!b.isTotal&&i<bars.length-2&&<line x1={bx(i)+bw} x2={bx(i+1)} y1={toY(b.top)} y2={toY(b.top)} stroke="rgba(255,255,255,0.15)" strokeDasharray="3,3" strokeWidth={1}/>}
+            <rect x={bx(i)} y={y1} width={bw} height={bh} fill={b.color} rx={4} opacity={b.isTotal?1:0.9}/>
+            {b.icon&&<text x={cx} y={y1-18} textAnchor="middle" fontSize={13}>{b.icon}</text>}
+            <text x={cx} y={H-mb+15} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.45)" fontFamily="DM Sans,sans-serif">{b.label}</text>
+            <text x={cx} y={isNeg?y2+13:y1-7} textAnchor="middle" fontSize={10} fontWeight="500" fill={isNeg?'#FC9D9D':'#A8E6CF'} fontFamily="DM Sans,sans-serif">{fmt(b.value,curr)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ─── AI CHAT PANEL ─── */
+function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
+  const [open,setOpen]=useState(false);
+  const [msgs,setMsgs]=useState([]);
+  const [input,setInput]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [started,setStarted]=useState(false);
+  const [error,setError]=useState(null);
+  const [needKey,setNeedKey]=useState(false);
+  const [keyDraft,setKeyDraft]=useState('');
+  const [keySet,setKeySet]=useState(!!getApiKey());
+  const endRef=useRef(null);
+  const MAX_TURNS=4;
+
+  useEffect(()=>{if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
+
+  const syncMsgs=(m)=>{ setMsgs(m); if(onUpdate) onUpdate(m); };
+
+  const doStart=async()=>{
+    setStarted(true);setLoading(true);setError(null);setNeedKey(false);
+    const prompt=buildPrompt();
+    const initMsg={role:'user',content:prompt};
+    syncMsgs([initMsg]);
+    try{
+      const text=await callClaude(systemPrompt,[initMsg],700);
+      syncMsgs([initMsg,{role:'assistant',content:text}]);
+    }catch(e){
+      if(e.message==='NO_KEY'){setNeedKey(true);setStarted(false);}
+      else setError('API error: '+e.message+'. Check your key and try again.');
+    }
+    setLoading(false);
+  };
+
+  const submitKey=async()=>{
+    if(!keyDraft.trim())return;
+    setError(null);setLoading(true);
+    setApiKey(keyDraft.trim());
+    try{
+      await callClaude('Reply only with the word OK.',[{role:'user',content:'OK?'}],5);
+      setKeySet(true);setNeedKey(false);
+      doStart();
+    }catch(e){
+      setError('Key test failed: '+e.message);
+      setApiKey('');
+    }
+    setLoading(false);
+  };
+
+  const send=async()=>{
+    if(!input.trim()||loading)return;
+    const userMsg={role:'user',content:input};
+    const updated=[...msgs,userMsg];
+    syncMsgs(updated);setInput('');setLoading(true);setError(null);
+    try{
+      const text=await callClaude(systemPrompt,updated,600);
+      syncMsgs([...updated,{role:'assistant',content:text}]);
+    }catch(e){setError('Error: '+e.message);}
+    setLoading(false);
+  };
+
+  const userTurns=msgs.filter(m=>m.role==='user').length-1;
+  const canSend=started&&userTurns<MAX_TURNS&&!loading;
+
+  const renderMsg=text=>{
+    const lines=text.split('\n');
+    return lines.map((line,i)=>{
+      if(/^\d+\.\s/.test(line))return<li key={i} style={{marginBottom:'0.25rem'}} dangerouslySetInnerHTML={{__html:line.replace(/^\d+\.\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+      if(/^[-•]\s/.test(line))return<li key={i} style={{marginBottom:'0.25rem'}} dangerouslySetInnerHTML={{__html:line.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+      if(line.trim()==='')return<br key={i}/>;
+      return<p key={i} dangerouslySetInnerHTML={{__html:line.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+    });
+  };
+
+  return(
+    <div className="ai-panel">
+      <div className="ai-panel-hd" onClick={()=>setOpen(o=>!o)}>
+        <div className="ai-panel-hd-left">
+          <div className="ai-avatar">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+            </svg>
+          </div>
+          <div>
+            <div className="ai-panel-ttl">AI Strategy Review</div>
+            <div className="ai-panel-sub">{stageLabel} — probing questions, industry cases & gap analysis</div>
+          </div>
+        </div>
+        <span className={`ai-chevron ${open?'open':''}`}>▼</span>
+      </div>
+      {open&&<div className="ai-body">
+        {!started&&!needKey&&<button className="ai-trigger-btn" onClick={doStart} disabled={loading}>
+          <span>✦</span> Get AI Feedback on This Stage
+        </button>}
+        {needKey&&<div className="ai-key-setup">
+          <p>Enter your <strong>Anthropic API key</strong> to enable AI coaching. The key is tested immediately, then used for this session only — never stored.</p>
+          <div className="ai-key-row">
+            <input className="ai-key-input" type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…" disabled={loading}/>
+            <button className="ai-key-btn" onClick={submitKey} disabled={loading||!keyDraft.trim()}>{loading?'Testing…':'Connect & Test →'}</button>
+          </div>
+          <div className="ai-key-note">Get your key at console.anthropic.com — keys start with sk-ant-</div>
+        </div>}
+        {started&&<div className="chat-messages">
+          {msgs.filter(m=>m.role==='assistant').length===0&&loading&&(
+            <div className="chat-msg"><div className="mini-av ai">AI</div><div className="chat-bubble ai"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>
+          )}
+          {msgs.map((m,i)=>{
+            if(i===0)return null; // skip the user prompt
+            return(
+              <div key={i} className={`chat-msg ${m.role==='user'?'user':''}`}>
+                <div className={`mini-av ${m.role==='assistant'?'ai':'usr'}`}>{m.role==='assistant'?'AI':'You'}</div>
+                <div className={`chat-bubble ${m.role==='assistant'?'ai':'user'}`}>
+                  {m.role==='assistant'?renderMsg(m.content):m.content}
+                </div>
+              </div>
+            );
+          })}
+          {msgs.length>1&&loading&&(
+            <div className="chat-msg"><div className="mini-av ai">AI</div><div className="chat-bubble ai"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>
+          )}
+          <div ref={endRef}/>
+        </div>}
+        {error&&<div style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{error}</div>}
+        {started&&<>
+          <div className="chat-input-row">
+            <input className="chat-input" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder={canSend?"Respond or ask a follow-up…":"Maximum exchanges reached"} disabled={!canSend}/>
+            <button className="chat-send" onClick={send} disabled={!canSend||!input.trim()}>Send</button>
+          </div>
+          {userTurns>=MAX_TURNS&&<div className="ai-limit">Maximum exchanges reached for this stage. Continue to the next step.</div>}
+        </>}
+      </div>}
+    </div>
+  );
+}
+
+/* ─── EXTRACT COACHING DIGEST ─── */
+function coachingDigest(chats){
+  const extract=(msgs,label)=>{
+    const aiMsgs=msgs.filter((m,i)=>m.role==='assistant'&&i>0);
+    if(!aiMsgs.length) return '';
+    return `\n--- AI Coaching: ${label} ---\n`+aiMsgs.map(m=>m.content).join('\n\n');
+  };
+  return [extract(chats.q1||[],'Stakeholder Analysis'), extract(chats.q2||[],'Strategic Levers'), extract(chats.q3||[],'NPV+ Valuation')].filter(Boolean).join('\n');
+}
+
+/* ─── AI CONSULTANT ─── */
+function AIConsultant({st}){
+  const [state,setState]=useState('idle'); // idle|loading|done|error|needkey
+  const [report,setReport]=useState('');
+  const [error,setError]=useState('');
+  const [keyDraft,setKeyDraft]=useState('');
+  const [open,setOpen]=useState(false);
+  const [activeTab,setActiveTab]=useState('q1');
+
+  const generate=async()=>{
+    setState('loading');
+    const sysPrompt=`You are a senior sustainability strategy consultant with deep knowledge of business strategy, ESG, and industry dynamics. You have access to web search to research real-world context. Your task is to produce your own independent expert assessment of a sustainability challenge — structured as a three-stage analysis following this framework:
+
+Q1 STAKEHOLDER ANALYSIS: Identify the four stakeholder categories (Nature & Society, Business Ecosystem, Regulators, Financial Institutions & Investors) that are materially relevant for this challenge and industry. For each: who specifically, what the pressure is, business impact, and where the opportunity lies.
+
+Q2 STRATEGIC LEVERS: Recommend the best strategic lever (Cost Reduction, WTP Creation, Market Creation, or Combination). Specify the target market segment if relevant. Explain the strategic path with reference to real companies that have pursued this successfully.
+
+Q3 NPV+ PERSPECTIVE: Provide a qualitative NPV+ assessment — which stakeholder benefit streams are most material, what the realistic order of magnitude of value is, and what the critical assumptions are for a positive business case. Reference real deals or investments where possible.
+
+Use web search to gather current, relevant information about the industry, regulation, and comparable cases. Be direct, specific, and evidence-based. Structure your response with clear section headers: ## Q1: Stakeholder Analysis, ## Q2: Strategic Lever Recommendation, ## Q3: NPV+ Perspective. Use **bold** for key points. Be constructive — this is meant to complement and enrich the group's own analysis.`;
+
+    const prompt=`Research and analyse this sustainability challenge:
+
+COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'not specified'}
+CHALLENGE: ${st.fish.name||'sustainability challenge'}
+${st.fish.desc||''}
+
+The group has produced their own analysis. Search for current information about:
+1. Key regulatory and market trends affecting this challenge in ${st.grp.industry||'this industry'}
+2. How leading companies are responding to "${st.fish.name}"
+3. Real investment cases and NPV benchmarks for similar sustainability initiatives
+
+Then produce your own independent expert three-stage analysis as instructed. Be specific, cite real examples, and provide constructive observations that enrich the group's thinking.`;
+
+    try{
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6',
+          max_tokens:2000,
+          system:sysPrompt,
+          tools:[{"type":"web_search_20250305","name":"web_search"}],
+          messages:[{role:'user',content:prompt}]
+        })
+      });
+      const data=await resp.json();
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
+      // Extract all text blocks (web search may produce multiple content blocks)
+      const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n\n');
+      if(!text) throw new Error('No text in response');
+      setReport(text);
+      setState('done');
+      setOpen(true);
+    }catch(e){setError(e.message);setState('error');}
+  };
+
+  const start=()=>{
+    if(!getApiKey()){setState('needkey');return;}
+    generate();
+  };
+
+  const submitKey=async()=>{
+    if(!keyDraft.trim())return;
+    setApiKey(keyDraft.trim());
+    try{
+      await callClaude('Reply OK.',[{role:'user',content:'OK?'}],5);
+      generate();
+    }catch(e){setError('Key test failed: '+e.message);setState('error');}
+  };
+
+  // Parse report into tabs
+  const sections={q1:'',q2:'',q3:''};
+  if(report){
+    const q1m=report.match(/##\s*Q1[^#]*([\s\S]*?)(?=##\s*Q2|$)/i);
+    const q2m=report.match(/##\s*Q2[^#]*([\s\S]*?)(?=##\s*Q3|$)/i);
+    const q3m=report.match(/##\s*Q3[^#]*([\s\S]*?)$/i);
+    if(q1m)sections.q1=q1m[1].trim();
+    if(q2m)sections.q2=q2m[1].trim();
+    if(q3m)sections.q3=q3m[1].trim();
+    if(!sections.q1&&!sections.q2&&!sections.q3)sections.q1=report;
+  }
+
+  const renderMd=text=>text.split('\n').map((ln,i)=>{
+    if(/^###\s/.test(ln))return<h4 key={i} style={{fontSize:'0.88rem',fontWeight:600,color:'white',margin:'1rem 0 0.3rem'}}>{ln.replace(/^###\s/,'')}</h4>;
+    if(/^##\s/.test(ln))return<h3 key={i} style={{fontSize:'0.95rem',fontWeight:600,color:'var(--gold)',margin:'1rem 0 0.4rem'}}>{ln.replace(/^##\s/,'')}</h3>;
+    if(/^[-•]\s/.test(ln))return<li key={i} style={{marginBottom:'0.3rem',color:'rgba(255,255,255,0.85)'}} dangerouslySetInnerHTML={{__html:ln.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+    if(ln.trim()==='')return<br key={i}/>;
+    return<p key={i} style={{marginBottom:'0.6rem',color:'rgba(255,255,255,0.85)',lineHeight:1.65}} dangerouslySetInnerHTML={{__html:ln.replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+  });
+
+  const TABS=[{id:'q1',label:'Q1 · Stakeholders'},{id:'q2',label:'Q2 · Strategy'},{id:'q3',label:'Q3 · NPV+'}];
+
+  return(
+    <div style={{background:'linear-gradient(135deg,#002A5C 0%,#004080 100%)',borderRadius:'var(--r-lg)',border:'1px solid rgba(198,151,47,0.35)',overflow:'hidden',marginBottom:'1.5rem'}}>
+      <div style={{padding:'1.75rem 2rem'}}>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{width:46,height:46,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="22" height="22" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#002A5C" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#002A5C" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#002A5C" strokeWidth="1.8"/></svg>
+            </div>
+            <div>
+              <div style={{fontSize:'1.05rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI Consultant Opinion</div>
+              <div style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.55)',marginTop:3}}>Independent expert analysis with live web research — Q1, Q2 & Q3</div>
+            </div>
+          </div>
+          {state==='idle'&&<button className="ai-trigger-btn" style={{margin:0}} onClick={start}>✦ Get Consultant Opinion</button>}
+          {state==='done'&&<button style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)',borderRadius:'var(--r)',padding:'0.5rem 1rem',cursor:'pointer',fontSize:'0.8rem',fontFamily:'inherit'}} onClick={()=>setOpen(o=>!o)}>{open?'Hide ▲':'Show ▼'}</button>}
+        </div>
+        {state==='needkey'&&<div className="ai-key-setup" style={{marginTop:'1.25rem'}}>
+          <p>Enter your <strong>Anthropic API key</strong> to enable the AI Consultant with web search.</p>
+          <div className="ai-key-row">
+            <input className="ai-key-input" type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
+            <button className="ai-key-btn" onClick={submitKey}>Connect →</button>
+          </div>
+        </div>}
+        {state==='loading'&&<div style={{marginTop:'1.25rem',display:'flex',alignItems:'center',gap:12}}>
+          <div style={{display:'flex',gap:5}}><div className="dot"/><div className="dot"/><div className="dot"/></div>
+          <span style={{color:'rgba(255,255,255,0.5)',fontSize:'0.82rem'}}>Researching industry context and producing expert analysis…</span>
+        </div>}
+        {state==='error'&&<div style={{marginTop:'1rem',color:'#FC9D9D',fontSize:'0.82rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--gold)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.82rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
+      </div>
+
+      {state==='done'&&open&&<div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'0 2rem 2rem'}}>
+        <div style={{display:'flex',gap:4,marginBottom:'1.25rem',background:'rgba(0,0,0,0.2)',borderRadius:30,padding:4,width:'fit-content'}}>
+          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.35rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',fontWeight:500,background:activeTab===t.id?'var(--gold)':'none',color:activeTab===t.id?'#002A5C':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>{t.label}</button>)}
+        </div>
+        <div style={{maxHeight:420,overflowY:'auto',paddingRight:4}}>
+          <ul style={{paddingLeft:'1.2rem'}}>
+            {renderMd(sections[activeTab]||'No content for this section.')}
+          </ul>
+        </div>
+        <div style={{marginTop:'1rem',fontSize:'0.7rem',color:'rgba(255,255,255,0.25)',borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'0.75rem'}}>
+          AI Consultant analysis is generated using live web search and is intended as a constructive complement to your group's own work — not a definitive assessment. Always apply your own judgement.
+        </div>
+      </div>}
+    </div>
+  );
+}
+
+/* ─── CFO REPORT ─── */
+function CFOReport({st, onClose}){
+  const [html,setHtml]=useState('');
+  const [genState,setGenState]=useState(getApiKey()?'loading':'needkey');
+  const [error,setError]=useState('');
+  const [keyDraft,setKeyDraft]=useState('');
+
+  const activeSth=st.sth.filter(x=>x.on);
+  const cap=parseFloat(st.capex)||0;
+  const lines=activeSth.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
+  const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
+  const totAnn=lines.reduce((a,x)=>a+x.ann,0);
+  const linfo=LEVERS.find(l=>l.id===st.lever);
+
+  const runGenerate=()=>{
+    setGenState('loading');
+    const system=`You are a senior management consultant writing a formal CFO-ready executive memo for an executive education group presenting a sustainability strategy opportunity. Write in a crisp, precise, investment-grade style. Structured prose — not bullet lists for the main narrative. Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>, <table>, <tr>, <th>, <td>, and one class="highlight-box" div for the executive summary. No markdown, no preamble, no sign-off — output inner HTML only starting with content directly.`;
+
+    const sthText=activeSth.map(t=>{const tp=STYPES.find(x=>x.id===t.id);return`${tp.label}: Who: ${t.who||'—'} | Pressure: ${t.pressure||'—'} | Impact: ${t.impact||'—'} | Opportunity: ${t.opp||'—'}`;}).join('\n');
+    const valText=lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return`${tp.label}: ${l.blabel||l.opp?.slice(0,50)||'benefit'} — ${fmt(l.ann,st.curr)}/year → NPV @5yr: ${fmt(l.ann*af(st.rate,5),st.curr)}, @10yr: ${fmt(l.ann*af(st.rate,10),st.curr)}`;}).join('\n');
+
+    // Build coaching digest from saved chat history
+    const digest=coachingDigest(st.chats||{});
+    const digestSection=digest?`\nAI COACHING INSIGHTS FROM DIALOGUE (incorporate refined thinking from these exchanges into the report where relevant):\n${digest}\n`:'';
+
+    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${st.fish.desc}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${st.ldetail||'—'}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${st.pitch||'—'}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
+
+    callClaude(system,[{role:'user',content:prompt}],2000)
+      .then(text=>{setHtml(text);setGenState('done');})
+      .catch(e=>{setError(e.message);setGenState('error');});
+  };
+
+  useEffect(()=>{ if(genState==='loading'&&getApiKey()) runGenerate(); },[]);
+
+  const submitKey=()=>{
+    if(!keyDraft.trim())return;
+    setApiKey(keyDraft.trim());
+    runGenerate();
+  };
+
+  return(
+    <div className="report-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="report-doc">
+        <div className="report-doc-hd">
+          <h2>Sustainability Strategy Opportunity<br/><span style={{fontSize:'1.1rem',fontWeight:400,color:'rgba(255,255,255,0.7)'}}>{st.fish.name||'Challenge Assessment'}</span></h2>
+          <div className="meta">Prepared by: {st.grp.name||'Executive Team'}{st.grp.industry?` · ${st.grp.industry}`:''} · {new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+          {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)
+            ? <div style={{marginTop:'0.5rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.45)'}}>
+                AI coaching insights from {[st.chats.q1?.filter(m=>m.role==='assistant').length||0, st.chats.q2?.filter(m=>m.role==='assistant').length||0, st.chats.q3?.filter(m=>m.role==='assistant').length||0].reduce((a,b)=>a+b,0)} exchanges incorporated
+              </div>
+            : null}
+          <div className="gold-line"/>
+        </div>
+        {genState==='needkey'&&(
+          <div style={{padding:'2.5rem'}}>
+            <div className="ai-key-setup" style={{background:'#F5F8FC',border:'1px solid rgba(0,64,128,0.15)'}}>
+              <p style={{color:'#333'}}>Enter your <strong style={{color:'var(--navy)'}}>Anthropic API key</strong> to generate the AI-augmented CFO report.</p>
+              <div className="ai-key-row">
+                <input className="ai-key-input" style={{background:'white',border:'1px solid rgba(0,0,0,0.2)',color:'#333'}} type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
+                <button className="ai-key-btn" onClick={submitKey}>Generate →</button>
+              </div>
+              <div className="ai-key-note" style={{color:'#999'}}>Get your key at console.anthropic.com</div>
+            </div>
+          </div>
+        )}
+        {genState==='loading'&&<div className="loading-report"><div className="spin"/><p>Generating executive report…</p><p className="sub">Synthesising your analysis and AI coaching insights</p></div>}
+        {genState==='error'&&<div style={{padding:'2rem',color:'#C0392B',fontSize:'0.9rem'}}>Generation failed: {error}<br/><button className="btn btn-p" style={{marginTop:'1rem'}} onClick={runGenerate}>Retry</button></div>}
+        {genState==='done'&&<div className="report-body" dangerouslySetInnerHTML={{__html:html}}/>}
+        <div className="report-actions no-print">
+          {genState==='done'&&<button className="btn btn-p" onClick={()=>{
+            const win=window.open('','_blank');
+            const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+            const chatCount=[st.chats?.q1,st.chats?.q2,st.chats?.q3].flatMap(c=>c||[]).filter(m=>m.role==='assistant').length;
+            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CFO Report — ${(st.fish.name||'Sustainability Strategy').replace(/</g,'&lt;')}</title>
+<style>
+@page{margin:2.2cm 2.5cm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.72;color:#111;background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover{border-bottom:3px solid #004080;padding-bottom:1.4rem;margin-bottom:2rem}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
+.logo-name{font-family:Georgia,serif;font-weight:700;font-size:1.5rem;letter-spacing:0.22em;color:#004080}
+.logo-tag{font-size:8pt;color:#888;letter-spacing:0.06em;margin-top:2px}
+h1{font-family:Georgia,serif;font-size:15pt;color:#002A5C;margin-bottom:0.3rem;font-weight:700}
+.meta{font-size:9pt;color:#666;margin-top:0.4rem}
+.ai-note{font-size:8pt;color:#888;margin-top:0.25rem;font-style:italic}
+h3{font-family:Georgia,serif;font-size:11.5pt;color:#002A5C;margin:1.5rem 0 0.45rem;padding-bottom:0.3rem;border-bottom:1px solid #C0D8EE;font-weight:700}
+p{margin-bottom:0.8rem}
+ul,ol{padding-left:1.4rem;margin-bottom:0.8rem}
+li{margin-bottom:0.22rem}
+strong{color:#002A5C;font-weight:700}
+.highlight-box{background:#E3EFF9;border-left:4px solid #004080;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:3px}
+table{width:100%;border-collapse:collapse;margin:0.8rem 0;font-size:9.5pt}
+th{background:#004080;color:white;padding:0.45rem 0.6rem;text-align:left;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+td{padding:0.45rem 0.6rem;border-bottom:1px solid #D0E0F0}
+tr:nth-child(even) td{background:#EEF4FB;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C0D8EE;font-size:8pt;color:#999;text-align:center}
+</style></head><body>
+<div class="cover">
+  <div class="logo-row">
+    <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+      <circle cx="22" cy="22" r="19.5" stroke="#004080" stroke-width="2"/>
+      <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#004080" stroke-width="1.3"/>
+      <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="#004080" stroke-width="1.3"/>
+      <line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#004080" stroke-width="1.3"/>
+      <line x1="22" y1="2.5" x2="22" y2="41.5" stroke="#004080" stroke-width="1.3"/>
+    </svg>
+  </div>
+  <h1>Sustainability Strategy Opportunity: ${(st.fish.name||'Challenge Assessment').replace(/</g,'&lt;')}</h1>
+  <div class="meta">Prepared by: ${(st.grp.name||'Executive Team').replace(/</g,'&lt;')}${st.grp.industry?' · '+st.grp.industry.replace(/</g,'&lt;'):''} &nbsp;·&nbsp; ${date}</div>
+  ${chatCount>0?`<div class="ai-note">This report incorporates insights from ${chatCount} AI coaching exchange${chatCount>1?'s':''} across the three stages of analysis.</div>`:''}
+</div>
+${html}
+<footer>© AcpitConsulting &nbsp;·&nbsp; ${date} &nbsp;·&nbsp; <a href="mailto:acpitcons.adm@gmail.com" style="color:#999">acpitcons.adm@gmail.com</a></footer>
+</body></html>`);
+            win.document.close();
+            win.focus();
+            setTimeout(()=>win.print(),600);
+          }}>Print / Export PDF</button>}
+          <button className="btn btn-s" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ─── */
+function Sidebar({step,setStep}){
+  const its=[{id:0,lbl:'Group & challenge',sec:'Start'},{id:1,lbl:'Q1 · Stakeholders',sec:'Analysis'},{id:2,lbl:'Q2 · Strategy',sec:'Analysis'},{id:3,lbl:'Q3 · NPV+',sec:'Analysis'},{id:4,lbl:'Summary & Report',sec:'Output'}];
+  let ls='';
+  return(
+    <nav className="sb">
+      {its.map(it=>{
+        const ns=it.sec!==ls;if(ns)ls=it.sec;
+        const d=step>it.id,a=step===it.id;
+        return<div key={it.id}>{ns&&<><div className="sb-div"/><div className="sb-lbl">{it.sec}</div></>}<div className={`sb-item ${a?'active':''} ${d?'done':''}`} onClick={()=>(d||a)&&setStep(it.id)}><div className="sb-dot">{d?'✓':it.id===0||it.id===4?'◆':it.id}</div>{it.lbl}</div></div>;
+      })}
+      <div style={{padding:'1.25rem 1.5rem',marginTop:'auto',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{fontSize:'0.62rem',color:'rgba(255,255,255,0.2)',lineHeight:1.5}}>© 2026 AcpitConsulting<br/><a href="mailto:acpitcons.adm@gmail.com" style={{color:'rgba(255,255,255,0.35)',textDecoration:'none'}}>Contact us</a></div>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── STEP 0 ─── */
+function S0({st,set}){
+  const sg=k=>e=>set(s=>({...s,grp:{...s.grp,[k]:e.target.value}}));
+  const sf=k=>e=>set(s=>({...s,fish:{...s.fish,[k]:e.target.value}}));
+  return<div>
+    <div className="card" style={{textAlign:'center',paddingBottom:'2rem'}}>
+
+
+      <h2 className="ctitle" style={{fontSize:'2rem',marginTop:'0.25rem'}}>Sustainability Strategy Compass</h2>
+      <p className="csub" style={{margin:'0.75rem auto 0',textAlign:'center'}}>Identify your sustainability disruptor, map its stakeholders, build a strategic response, and quantify the value — with AI coaching at every stage.</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'1rem',margin:'2rem auto 0',maxWidth:'580px'}}>
+        {[['Q1','Stakeholders','Map who drives the disruption and what it means for your business'],['Q2','Strategy','Identify the lever — cost, WTP, or market creation'],['Q3','NPV+','Each stakeholder becomes a benefit line in a cumulative waterfall']].map(([n,t,d])=>(
+          <div key={n} style={{background:'var(--cream-d)',borderRadius:'var(--r)',padding:'1rem',textAlign:'left'}}>
+            <div style={{width:28,height:28,background:'var(--navy)',color:'white',borderRadius:'50%',fontFamily:"'Playfair Display',serif",fontSize:'0.85rem',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0.6rem'}}>{n}</div>
+            <div style={{fontSize:'0.82rem',fontWeight:500,color:'var(--navy)',marginBottom:'0.3rem'}}>{t}</div>
+            <div style={{fontSize:'0.74rem',color:'#666',lineHeight:1.5}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card">
+
+      <div className="ey">Group</div><h2 className="ctitle">Who are you?</h2><div className="divl"/>
+      <div className="g2">
+        <div className="fld"><label>Group name</label><input type="text" value={st.grp.name} onChange={sg('name')} placeholder="e.g. Team Lighthouse"/></div>
+        <div className="fld"><label>Industry / sector</label><input type="text" value={st.grp.industry} onChange={sg('industry')} placeholder="e.g. Consumer goods, Energy…"/></div>
+      </div>
+      <div className="fld" style={{marginBottom:0}}><label>Group members</label><textarea value={st.grp.members} onChange={sg('members')} placeholder="List member names…" style={{minHeight:52}}/></div>
+    </div>
+    <div className="card">
+
+      <div className="ey">Your challenge</div>
+      <h2 className="ctitle">Name your sustainability disruptor</h2>
+      <p className="csub">Define one specific, salient "fish" — a sustainability challenge from your current business experience.</p>
+      <div className="divl"/>
+      <div style={{background:'white',border:'1.5px solid var(--border-m)',borderRadius:'var(--r-lg)',padding:'1.5rem'}}>
+        <div className="fld"><label>Challenge name</label><input type="text" value={st.fish.name} onChange={sf('name')} placeholder="e.g. Carbon pricing risk, Supply-chain deforestation, Plastic packaging regulation…"/></div>
+        <div className="fld" style={{marginBottom:0}}><label>Brief description</label><textarea value={st.fish.desc} onChange={sf('desc')} placeholder="What makes this a disruptor for your business? Why is it salient now?" style={{minHeight:80}}/></div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ─── STEP 1 ─── */
+function S1({st,set}){
+  const tog=id=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,on:!x.on}:x)}));
+  const upd=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
+
+  const sysPrompt=`You are a sustainability strategy professor facilitating an executive education session on stakeholder analysis. Review the group's work with intellectual rigor. Challenge vague answers. Identify gaps. Reference real companies (Unilever, BASF, Ørsted, Nestlé, Volkswagen, Patagonia, Apple, etc.) relevant to their industry context. Be concise and executive-level — use numbered points. Limit each response to 200 words.`;
+
+  const buildPrompt=()=>{
+    const actv=st.sth.filter(x=>x.on);
+    if(!actv.length)return`The group is analyzing challenge: "${st.fish.name||'unspecified'}" in industry: "${st.grp.industry||'unspecified'}". They have not yet activated any stakeholder categories. Briefly explain why completing a thorough stakeholder analysis is critical and ask what stakeholders are most relevant to their industry.`;
+    const text=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`\n${tp.label}:\n  Who: ${x.who||'not specified'}\n  Pressure: ${x.pressure||'not specified'}\n  Business impact: ${x.impact||'not specified'}\n  Opportunity: ${x.opp||'not specified'}`;}).join('');
+    return`Group "${st.grp.name||'unnamed'}" from industry "${st.grp.industry||'unspecified'}" has analyzed stakeholders for their challenge: "${st.fish.name}".\n\nTheir analysis:${text}\n\nReview this analysis. Identify what they may have missed, challenge any vague or shallow answers with probing questions, and reference 1–2 comparable industry cases. Point out if the inactive stakeholder categories are actually material for their industry.`;
+  };
+
+  return<div>
+    <div className="card">
+
+      <div className="ey">Question 1</div>
+      <h2 className="ctitle">Stakeholder Analysis</h2>
+      <p className="csub">Identify which stakeholder categories are driving the sustainability pressure. <strong>Each active stakeholder will become a benefit line in your NPV+ waterfall in Q3</strong> — linking the strategic analysis directly to the financial case.</p>
+      <div className="divl"/>
+      {STYPES.map(tp=>{
+        const d=st.sth.find(x=>x.id===tp.id);
+        return<div key={tp.id} className="sc" style={d.on?{borderColor:tp.mid}:{}}>
+          <div className="sc-hd" onClick={()=>tog(tp.id)}>
+            <div className="sc-hl">
+              <div className="sc-ic" style={{background:tp.light}}>{tp.icon}</div>
+              <div><div className="sc-nm" style={{color:d.on?tp.mid:'#333'}}>{tp.label}</div><div className="sc-ds">{tp.desc}</div></div>
+            </div>
+            <button className="tgl" style={d.on?{background:tp.mid}:{}} onClick={e=>{e.stopPropagation();tog(tp.id);}}>
+              <div className="tgl-k" style={d.on?{left:21}:{}}/>
+            </button>
+          </div>
+          {d.on&&<div className="sc-body">
+            <div className="divl" style={{marginTop:0,marginBottom:'1.1rem'}}/>
+            <div className="fld"><label>Who specifically?</label><textarea value={d.who} onChange={e=>upd(tp.id,'who',e.target.value)} placeholder="Name the specific actors within this category driving the pressure…" style={{minHeight:68}}/></div>
+            <div className="fld"><label>Specific pressure</label><textarea value={d.pressure} onChange={e=>upd(tp.id,'pressure',e.target.value)} placeholder="The precise mechanism: regulation name, customer requirement, market signal…" style={{minHeight:68}}/></div>
+            <div className="fld"><label>Impact on your business</label><textarea value={d.impact} onChange={e=>upd(tp.id,'impact',e.target.value)} placeholder="How does this affect costs, revenues, operations, access to capital or reputation?" style={{minHeight:68}}/></div>
+            <div className="fld" style={{marginBottom:0}}><label>Where is the opportunity?</label><textarea value={d.opp} onChange={e=>upd(tp.id,'opp',e.target.value)} placeholder="What opportunity does acting on this disruption create? Why would it give you a competitive edge?" style={{minHeight:68}}/></div>
+          </div>}
+        </div>;
+      })}
+      <p style={{fontSize:'0.77rem',color:'#999',marginTop:'0.5rem'}}>Activate at least one stakeholder category. Each active category appears as a value line in Q3.</p>
+    </div>
+    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} />
+  </div>;
+}
+
+/* ─── STEP 2 ─── */
+function S2({st,set}){
+  const upd=(k,v)=>set(s=>({...s,[k]:v}));
+  const showSeg=st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo';
+
+  const sysPrompt=`You are a sustainability strategy professor reviewing strategic lever choices. Challenge vague lever selections. Test whether the market segment is sufficiently specific. Ask about competitive dynamics and second-order effects. Reference real strategic pivots by companies (e.g. Ørsted from oil to wind, Unilever's Sustainable Living brands, Interface's Mission Zero). Be direct. 200 words max.`;
+
+  const buildPrompt=()=>{
+    const linfo=LEVERS.find(l=>l.id===st.lever);
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) is addressing challenge: "${st.fish.name}".
+
+Strategic lever selected: ${linfo?.label||'none selected'}
+${showSeg?`Target market segment: ${st.mseg||'not specified'}`:''}
+Strategic path: ${st.ldetail||'not specified'}
+
+Challenge their lever choice and strategic thinking. Is this the right lever? Is the market segment specific enough? What are they missing or underestimating? Reference 1 comparable company case.`;
+  };
+
+  return<div>
+    <div className="card">
+
+      <div className="ey">Question 2</div>
+      <h2 className="ctitle">Strategic Levers</h2>
+      <p className="csub">Select the primary lever that best captures the opportunity, and explain the strategic path in concrete terms.</p>
+      <div className="divl"/>
+      <div className="fld">
+        <label>Primary strategic lever</label>
+        <div className="lg">
+          {LEVERS.map(l=><div key={l.id} className={`lc ${st.lever===l.id?'sel':''}`} onClick={()=>upd('lever',l.id)}>
+            <span className="lt" style={{background:l.bg,color:l.tc}}>{l.tag}</span>
+            <div className="ltt">{l.label}</div>
+            <div className="ld">{l.desc}</div>
+          </div>)}
+        </div>
+      </div>
+      {showSeg&&<div className="fld">
+        <label>Target market segment</label>
+        <textarea value={st.mseg} onChange={e=>upd('mseg',e.target.value)} placeholder="Be specific: customer profile, unmet need, estimated size, willingness to pay premium. Avoid 'sustainability-conscious customers.'"/>
+        <div className="fld-hint">For Market Creation: who are the new customers this disruption is bringing into existence?</div>
+      </div>}
+      <div className="fld" style={{marginBottom:0}}>
+        <label>Strategic path — how will you pursue this lever?</label>
+        <textarea value={st.ldetail} onChange={e=>upd('ldetail',e.target.value)} placeholder="Describe concrete actions, business model changes, or investments required. Link back to the opportunities in Q1. Why is this lever the best fit for your competitive position?" style={{minHeight:120}}/>
+      </div>
+    </div>
+    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} />
+  </div>;
+}
+
+/* ─── STEP 3 ─── */
+function S3({st,set}){
+  const upd=(k,v)=>set(s=>({...s,[k]:v}));
+  const usth=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
+  const [vh,setVh]=useState(5);
+  const actv=st.sth.filter(x=>x.on);
+  const cur=st.curr;
+  const afV=af(st.rate,vh);
+  const capN=parseFloat(st.capex)||0;
+  const totalAnn=actv.reduce((a,x)=>a+(parseFloat(x.annual)||0),0);
+  const npv5=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,5),0);
+  const npv10=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,10),0);
+
+  const sysPrompt=`You are a sustainability strategy professor and former investment banker reviewing a group's NPV+ financial model. Challenge assumptions aggressively but constructively. Ask: What is driving that number? What would a skeptical CFO push back on? What is the single biggest assumption risk? Reference a comparable deal or investment case (e.g. Ørsted wind, Plastic Energy, Interface recycled carpets, Renault EV). 200 words max.`;
+
+  const buildPrompt=()=>{
+    const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(parseFloat(x.annual)||0,cur)}/year`;}).join('\n');
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'unspecified'}) NPV+ model for "${st.fish.name}":
+
+CAPEX: ${capN>0?fmt(-capN,cur):'None'}
+Discount rate (WACC): ${st.rate}%
+
+Benefit lines:
+${lines||'None entered'}
+
+NPV+ at 5 years: ${fmt(npv5,cur)}
+NPV+ at 10 years: ${fmt(npv10,cur)}
+CFO Pitch narrative: ${st.pitch||'not provided'}
+
+Challenge this financial model. What assumptions are most fragile? What is the single most important question a CFO would ask? What are they missing? Reference a comparable case.`;
+  };
+
+  return<div>
+    <div className="card">
+
+      <div className="ey">Question 3</div>
+      <h2 className="ctitle">NPV+ Valuation</h2>
+      <p className="csub">Quantify the value of each stakeholder-driven opportunity. The NPV+ framework builds a cumulative waterfall — starting from CAPEX, then adding the present value of each benefit stream — showing exactly which stakeholders tip the project positive, and when.</p>
+      <div className="divl"/>
+      <div className="g2">
+        <div className="fld"><label>Currency</label><select value={cur} onChange={e=>upd('curr',e.target.value)}>{CURR.map(c=><option key={c}>{c}</option>)}</select></div>
+        <div className="fld"><label>CAPEX / upfront investment ({cur})</label><input type="number" value={st.capex} onChange={e=>upd('capex',e.target.value)} placeholder="0 if none" min="0"/><div className="fld-hint">Leave blank if no upfront investment required</div></div>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>Discount rate (WACC) — {st.rate}%</label>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'0.35rem'}}>
+          <input type="range" min="2" max="20" step="1" value={st.rate} onChange={e=>upd('rate',+e.target.value)} style={{flex:1}}/>
+          <span style={{fontSize:'0.82rem',fontWeight:500,color:'var(--blue)',minWidth:35}}>{st.rate}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div className="card">
+
+      <div className="ey">Stakeholder benefit lines</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Quantify each opportunity</h2>
+      <p className="csub">For each active stakeholder from Q1, enter the estimated annual financial value. These become the NPV+ waterfall lines.</p>
+      <div className="divl"/>
+      {actv.length===0&&<div style={{textAlign:'center',padding:'2rem',color:'#aaa',fontSize:'0.85rem'}}>No stakeholders activated in Q1. Go back and activate at least one.</div>}
+      {actv.map(s=>{
+        const tp=STYPES.find(t=>t.id===s.id),ann=parseFloat(s.annual)||0,contrib=ann*afV;
+        return<div key={s.id} className="nl">
+          <div className="nl-hd">
+            <div className="nl-left">
+              <div className="nl-badge" style={{background:tp.light}}>{tp.icon}</div>
+              <div><div className="nl-nm" style={{color:tp.mid}}>{tp.label}</div><div className="nl-sub">{ann>0?`${fmt(ann,cur)}/year`:'Enter annual benefit below'}</div></div>
+            </div>
+            {ann>0&&<div className="nl-val" style={{color:tp.mid}}>{fmt(contrib,cur)}<span style={{fontSize:'0.7rem',fontWeight:400,color:'#999',marginLeft:4}}>NPV @ {vh}yr</span></div>}
+          </div>
+          <div className="nl-body">
+            <div className="fld" style={{marginTop:'0.75rem'}}><label>Benefit description</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label — e.g. EU Carbon tax savings, Recycling margin…'}/></div>
+            <div className="g2">
+              <div className="fld" style={{marginBottom:0}}>
+                <label>Annual benefit ({cur})</label>
+                <input type="number" value={s.annual} onChange={e=>usth(s.id,'annual',e.target.value)} placeholder="e.g. 500000" min="0"/>
+                <div className="fld-hint">Steady-state annual value once implemented</div>
+              </div>
+              <div className="fld" style={{marginBottom:0}}>
+                <label>NPV contribution @ {vh}yr</label>
+                <div style={{padding:'0.56rem 0.8rem',background:'var(--cream-d)',borderRadius:'var(--r)',fontSize:'0.875rem',fontWeight:500,color:ann>0?tp.mid:'#ccc',border:'1px solid var(--border)'}}>{ann>0?`${fmt(contrib,cur)}`:'—'}</div>
+                <div className="fld-hint">WACC {st.rate}% · {vh}-year horizon</div>
+              </div>
+            </div>
+          </div>
+        </div>;
+      })}
+    </div>
+
+    <div className="wf">
+      <div className="wf-hd">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div className="wf-ttl">NPV+ Waterfall</div>
+        </div>
+        <div className="htabs">{[5,10].map(h=><button key={h} className={`htab ${vh===h?'on':''}`} onClick={()=>setVh(h)}>{h}-year</button>)}</div>
+      </div>
+      <Waterfall sth={actv} capex={st.capex} rate={st.rate} horizon={vh} curr={cur}/>
+      <div className="npv3">
+        <div className="npv3b"><div className="npv3l">Annual net benefit</div><div className={`npv3v ${totalAnn>0?'pos':''}`}>{fmt(totalAnn,cur)}</div></div>
+        <div className="npv3b"><div className="npv3l">NPV+ at 5 years</div><div className={`npv3v ${npv5>0?'pos':'neg'}`}>{fmt(npv5,cur)}</div></div>
+        <div className="npv3b"><div className="npv3l">NPV+ at 10 years</div><div className="npv3v gld">{fmt(npv10,cur)}</div></div>
+      </div>
+      <div style={{marginTop:'0.875rem',fontSize:'0.7rem',color:'rgba(255,255,255,0.22)',textAlign:'center'}}>NPV+ = −CAPEX + Σ (annual benefit × annuity factor) · WACC {st.rate}% · steady-state from year 1</div>
+    </div>
+
+    <div className="card">
+
+      <div className="ey">The pitch</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Present to your CFO or investor</h2>
+      <p className="csub">Walk through the waterfall. Justify each benefit line. Is this a 5-year or 10-year story? What are the key risks?</p>
+      <div className="divl"/>
+      <div className="fld" style={{marginBottom:0}}><textarea value={st.pitch} onChange={e=>upd('pitch',e.target.value)} placeholder="Explain the assumptions. For each stakeholder benefit: what drives it, how confident are you, what market share or regulation assumption underpins it? What must happen for the project to reach positive NPV?" style={{minHeight:130}}/></div>
+    </div>
+
+    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} />
+  </div>;
+}
+
+/* ─── STEP 4: SUMMARY ─── */
+function S4({st}){
+  const [showReport,setShowReport]=useState(false);
+  const {grp,fish,sth,lever,ldetail,mseg,curr,capex,rate,pitch}=st;
+  const actv=sth.filter(x=>x.on);
+  const cap=parseFloat(capex)||0;
+  const lines=actv.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,5),0);
+  const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,10),0);
+  const totAnn=lines.reduce((a,x)=>a+x.ann,0);
+  const linfo=LEVERS.find(l=>l.id===lever);
+
+  return<div>
+    {showReport&&<CFOReport st={st} onClose={()=>setShowReport(false)}/>}
+    <div className="card" style={{marginBottom:'1.5rem'}}>
+
+      <div className="ey">Complete output</div>
+      <h2 className="ctitle">Group Summary</h2>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'1rem',marginTop:'0.5rem'}}>
+        <div>
+          <div style={{fontSize:'1rem',fontWeight:500}}>{grp.name||'Unnamed group'}</div>
+          {grp.industry&&<div style={{fontSize:'0.82rem',color:'#666'}}>{grp.industry}</div>}
+          {grp.members&&<div style={{fontSize:'0.78rem',color:'#999',marginTop:3}}>{grp.members}</div>}
+        </div>
+        <div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap'}}>
+          <button className="btn btn-s no-print" onClick={()=>window.print()}>Print summary</button>
+          <button className="btn btn-report no-print" onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
+        </div>
+      </div>
+      {fish.name&&<div style={{marginTop:'1.25rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',borderLeft:'4px solid var(--blue)'}}>
+        <div style={{fontSize:'0.67rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--blue)',marginBottom:'0.3rem'}}>Challenge</div>
+        <div style={{fontSize:'1.05rem',fontWeight:600,color:'var(--navy)',fontFamily:"'Playfair Display',serif"}}>{fish.name}</div>
+        {fish.desc&&<div style={{fontSize:'0.83rem',color:'#555',marginTop:'0.3rem'}}>{fish.desc}</div>}
+      </div>}
+    </div>
+
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Question 1</div><h3>Stakeholder Analysis</h3></div></div>
+      {actv.length===0&&<div className="sum-sec-body" style={{color:'#aaa',fontSize:'0.85rem'}}>Not completed.</div>}
+      {actv.map((s,i)=>{
+        const tp=STYPES.find(t=>t.id===s.id);
+        return<div key={s.id} className="sum-sec-body" style={{borderBottom:i<actv.length-1?'1px solid var(--border)':0}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'0.22rem 0.7rem',borderRadius:20,fontSize:'0.77rem',fontWeight:500,background:tp.light,color:tp.mid,marginBottom:'0.875rem'}}>{tp.icon} {tp.label}</span>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+            {[['Who',s.who],['Pressure',s.pressure],['Business impact',s.impact],['Opportunity',s.opp]].map(([l,v])=>(
+              <div key={l} style={{display:'flex',flexDirection:'column',gap:'0.22rem'}}>
+                <span style={{fontSize:'0.7rem',color:'#999'}}>{l}</span>
+                <span style={{fontSize:'0.85rem',color:'#1A1A1A',lineHeight:1.55}}>{v||<em style={{color:'#ccc'}}>—</em>}</span>
+              </div>
+            ))}
+          </div>
+        </div>;
+      })}
+    </div>
+
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Question 2</div><h3>Strategic Levers</h3></div></div>
+      <div className="sum-sec-body">
+        {linfo&&<span style={{display:'inline-block',padding:'0.28rem 0.85rem',borderRadius:20,fontSize:'0.79rem',fontWeight:500,background:linfo.bg,color:linfo.tc,marginBottom:'0.875rem'}}>{linfo.label}</span>}
+        {(lever==='wtp'||lever==='mkt'||lever==='combo')&&mseg&&<div style={{marginBottom:'0.875rem'}}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Target segment</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{mseg}</div></div>}
+        <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Strategic path</div>
+        <div style={{fontSize:'0.85rem',lineHeight:1.55}}>{ldetail||<em style={{color:'#ccc'}}>—</em>}</div>
+      </div>
+    </div>
+
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Question 3</div><h3>NPV+ Valuation</h3></div></div>
+      <div className="sum-sec-body">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'0.875rem',marginBottom:'1.5rem'}}>
+          {[['Annual net benefit',totAnn,totAnn>0],['NPV+ at 5 years',npv5,npv5>0],['NPV+ at 10 years',npv10,npv10>0]].map(([l,v,pos])=>(
+            <div key={l} style={{background:'var(--cream-d)',borderRadius:'var(--r)',padding:'0.875rem',textAlign:'center'}}>
+              <div style={{fontSize:'0.62rem',color:'#999',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'0.3rem'}}>{l}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:'1.1rem',fontWeight:600,color:pos?'var(--pos)':'var(--neg)'}}>{fmt(v,curr)}</div>
+            </div>
+          ))}
+        </div>
+        <table className="stbl">
+          <thead><tr><th>Stakeholder</th><th>Benefit</th><th style={{textAlign:'right'}}>Annual</th><th style={{textAlign:'right'}}>NPV 5yr</th><th style={{textAlign:'right'}}>NPV 10yr</th></tr></thead>
+          <tbody>
+            {cap>0&&<tr><td style={{color:'var(--neg)'}}>CAPEX</td><td>—</td><td style={{textAlign:'right',color:'var(--neg)',fontWeight:500}}>{fmt(-cap,curr)}</td><td style={{textAlign:'right',color:'var(--neg)'}}>{fmt(-cap,curr)}</td><td style={{textAlign:'right',color:'var(--neg)'}}>{fmt(-cap,curr)}</td></tr>}
+            {lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return<tr key={l.id}><td><span style={{fontSize:'0.8rem',color:tp.mid,fontWeight:500}}>{tp.icon} {tp.label.split(' ')[0]}</span></td><td style={{color:'#555'}}>{l.blabel||l.opp?.slice(0,40)||'—'}</td><td style={{textAlign:'right',fontWeight:500}}>{fmt(l.ann,curr)}</td><td style={{textAlign:'right',color:'var(--pos)'}}>{fmt(l.ann*af(rate,5),curr)}</td><td style={{textAlign:'right',color:'var(--pos)'}}>{fmt(l.ann*af(rate,10),curr)}</td></tr>;})}
+          </tbody>
+        </table>
+        {pitch&&<div style={{marginTop:'1.25rem'}}><div style={{fontSize:'0.68rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--gold-d)',marginBottom:'0.6rem'}}>CFO Pitch</div><div style={{fontSize:'0.86rem',lineHeight:1.65}}>{pitch}</div></div>}
+      </div>
+    </div>
+
+    <AIConsultant st={st}/>
+
+    <div style={{background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 100%)',borderRadius:'var(--r-lg)',padding:'2rem',textAlign:'center',border:'1px solid rgba(198,151,47,0.3)'}}>
+      <h3 style={{color:'white',fontSize:'1.15rem'}}>Ready to present to your CFO?</h3>
+      <p style={{color:'rgba(255,255,255,0.6)',fontSize:'0.85rem',margin:'0.5rem auto 1.5rem',maxWidth:'480px'}}>
+        Generate an AI-augmented executive memo that synthesises your three-stage analysis
+        {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)?', your AI coaching dialogue,':''} and the consultant opinion into a CFO-ready investment recommendation.
+      </p>
+      <button className="btn btn-g no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem'}} onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
+    </div>
+  </div>;
+}
+
+/* ─── APP ─── */
+function App(){
+  const [step,setStep]=useState(0);
+  const [st,set]=useState(init());
+  const LBLS=['Setup','Stakeholders','Strategy','NPV+','Summary'];
+  const COMPS=[S0,S1,S2,S3,S4];
+  const Comp=COMPS[step];
+  return<div className="app">
+    <header className="hdr">
+      <div className="hdr-brand">
+        <div><div className="hdr-title">Sustainability Strategy Compass</div></div>
+      </div>
+      {(st.grp.name||st.fish.name)&&<div className="hdr-grp">{[st.grp.name,st.fish.name].filter(Boolean).join(' · ')}</div>}
+    </header>
+    <div className="body">
+      <Sidebar step={step} setStep={setStep}/>
+      <main className="main"><Comp st={st} set={set}/></main>
+    </div>
+    <div className="nav no-print">
+      <button className="btn btn-s" onClick={()=>setStep(s=>s-1)} disabled={step===0}>← Back</button>
+      <div className="nav-info">Step {step+1} of 5 · {LBLS[step]}</div>
+      {step<4?<button className="btn btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>:<button className="btn btn-g" onClick={()=>window.print()}>Print summary</button>}
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
