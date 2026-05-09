@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ibsp
+    name: sustcomp
     env: node
     plan: free
     buildCommand: npm install
@@ -12,5 +12,9 @@ services:
         generateValue: true
       - key: ADMIN_PASSWORD
         sync: false
-      - key: USERS
+      - key: DATABASE_URL
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_PASS
         sync: false

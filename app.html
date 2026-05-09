@@ -253,7 +253,7 @@ function fmt(n,c){
 function af(r,n){const rr=r/100;return rr===0?n:(1-Math.pow(1+rr,-n))/rr;}
 
 /* ─── API KEY (module-level, set once per session) ─── */
-let _apiKey = '';
+let _apiKey = (window.__API_KEY__) || '';
 function getApiKey(){ return _apiKey; }
 function setApiKey(k){ _apiKey = k.trim(); }
 
@@ -619,7 +619,7 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
 }
 
 /* ─── CFO REPORT ─── */
-function CFOReport({st, onClose}){
+function CFOReport({st, onClose, onHtmlReady}){
   const [html,setHtml]=useState('');
   const [genState,setGenState]=useState(getApiKey()?'loading':'needkey');
   const [error,setError]=useState('');
@@ -647,7 +647,7 @@ function CFOReport({st, onClose}){
     const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${st.fish.desc}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${st.ldetail||'—'}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${st.pitch||'—'}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
     callClaude(system,[{role:'user',content:prompt}],2000)
-      .then(text=>{setHtml(text);setGenState('done');})
+      .then(text=>{setHtml(text);setGenState('done');if(onHtmlReady)onHtmlReady(text);})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
 
@@ -1028,6 +1028,10 @@ Challenge this financial model. What assumptions are most fragile? What is the s
 /* ─── STEP 4: SUMMARY ─── */
 function S4({st}){
   const [showReport,setShowReport]=useState(false);
+  const [reportHtml,setReportHtml]=useState('');
+  const [submitted,setSubmitted]=useState(false);
+  const [submitting,setSubmitting]=useState(false);
+  const [submitErr,setSubmitErr]=useState('');
   const {grp,fish,sth,lever,ldetail,mseg,curr,capex,rate,pitch}=st;
   const actv=sth.filter(x=>x.on);
   const cap=parseFloat(capex)||0;
@@ -1037,8 +1041,34 @@ function S4({st}){
   const totAnn=lines.reduce((a,x)=>a+x.ann,0);
   const linfo=LEVERS.find(l=>l.id===lever);
 
+  const submitToInstructor=async()=>{
+    setSubmitting(true);setSubmitErr('');
+    try{
+      const resp=await fetch('/api/submit',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          groupName:grp.name||'',
+          industry:grp.industry||'',
+          challengeName:fish.name||'',
+          challengeDesc:fish.desc||'',
+          lever,
+          stakeholders:actv,
+          benefitLines:lines,
+          npv5,npv10,
+          rate:parseFloat(rate)||0,
+          currency:curr,
+          reportHtml
+        })
+      });
+      if(!resp.ok)throw new Error('Server error '+resp.status);
+      setSubmitted(true);
+    }catch(e){setSubmitErr(e.message);}
+    setSubmitting(false);
+  };
+
   return<div>
-    {showReport&&<CFOReport st={st} onClose={()=>setShowReport(false)}/>}
+    {showReport&&<CFOReport st={st} onClose={()=>setShowReport(false)} onHtmlReady={setReportHtml}/>}
     <div className="card" style={{marginBottom:'1.5rem'}}>
 
       <div className="ey">Complete output</div>
@@ -1120,7 +1150,14 @@ function S4({st}){
         Generate an AI-augmented executive memo that synthesises your three-stage analysis
         {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)?', your AI coaching dialogue,':''} and the consultant opinion into a CFO-ready investment recommendation.
       </p>
-      <button className="btn btn-g no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem'}} onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
+      <div style={{display:'flex',gap:'1rem',justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="btn btn-g no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem'}} onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
+        <button className="btn btn-p no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem',opacity:submitted?0.6:1}} onClick={submitToInstructor} disabled={submitting||submitted}>
+          {submitted?'✓ Submitted to Instructor':submitting?'Submitting…':'↑ Submit to Instructor'}
+        </button>
+      </div>
+      {submitErr&&<p style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{submitErr}</p>}
+      {submitted&&<p style={{color:'rgba(255,255,255,0.5)',fontSize:'0.78rem',marginTop:'0.75rem'}}>Your report and analysis have been sent to the instructor.</p>}
     </div>
   </div>;
 }

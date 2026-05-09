@@ -1,14 +1,17 @@
 {
   "name": "ibsp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Sustainability Strategy Compass",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "express": "^4.18.2",
-    "express-session": "^1.17.3"
+    "express-session": "^1.17.3",
+    "nodemailer": "^6.9.9",
+    "pg": "^8.11.3"
   },
   "engines": {
     "node": ">=18"
