@@ -1168,8 +1168,49 @@ function S4({st}){
 
 /* ─── APP ─── */
 function App(){
-  const [step,setStep]=useState(0);
-  const [st,set]=useState(init());
+  const DKEY=`sustcomp_${window.__USERNAME__||'guest'}`;
+
+  // Load initial state from localStorage immediately (fast, no flash)
+  const loadLocal=()=>{
+    try{const s=localStorage.getItem(DKEY);return s?JSON.parse(s):null;}catch(e){return null;}
+  };
+
+  const local=loadLocal();
+  const [step,setStep]=useState(local?.step||0);
+  const [st,set]=useState(local?.st||init());
+  const [saved,setSaved]=useState(false);
+
+  // Save to localStorage on every change
+  useEffect(()=>{
+    try{localStorage.setItem(DKEY,JSON.stringify({step,st}));}catch(e){}
+  },[st,step]);
+
+  // On mount: fetch server draft and restore (server is authoritative across devices)
+  useEffect(()=>{
+    fetch('/api/draft').then(r=>r.json()).then(data=>{
+      if(data.state){
+        set(data.state.st||init());
+        setStep(data.state.step||0);
+      }
+    }).catch(()=>{});
+  },[]);
+
+  // Save to server immediately when step changes
+  useEffect(()=>{
+    setSaved(false);
+    fetch('/api/draft',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
+      .then(()=>setSaved(true)).catch(()=>{});
+  },[step]);
+
+  // Save to server 2 seconds after user stops typing
+  useEffect(()=>{
+    const t=setTimeout(()=>{
+      fetch('/api/draft',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
+        .then(()=>setSaved(true)).catch(()=>{});
+    },2000);
+    return()=>clearTimeout(t);
+  },[st]);
+
   const LBLS=['Setup','Stakeholders','Strategy','NPV+','Summary'];
   const COMPS=[S0,S1,S2,S3,S4];
   const Comp=COMPS[step];
@@ -1189,7 +1230,7 @@ function App(){
     </div>
     <div className="nav no-print">
       <button className="btn btn-s" onClick={()=>setStep(s=>s-1)} disabled={step===0}>← Back</button>
-      <div className="nav-info">Step {step+1} of 5 · {LBLS[step]}</div>
+      <div className="nav-info">Step {step+1} of 5 · {LBLS[step]}{saved&&<span style={{marginLeft:'0.5rem',fontSize:'0.65rem',opacity:0.45}}>✓ saved</span>}</div>
       {step<4?<button className="btn btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>:<button className="btn btn-g" onClick={()=>window.print()}>Print summary</button>}
     </div>
   </div>;

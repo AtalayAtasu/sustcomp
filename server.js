@@ -55,6 +55,12 @@ async function initDB() {
       report_html    TEXT DEFAULT '',
       submitted_at   TIMESTAMPTZ DEFAULT NOW()
     )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS drafts (
+      user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state      JSONB,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
   console.log('Database ready');
 }
 
@@ -265,6 +271,28 @@ app.get('/', requireLogin, (req, res) => {
 });
 
 // ── SUBMIT API ─────────────────────────────────────────────────────────────
+
+// ── DRAFT (auto-save) ──────────────────────────────────────────────────────
+
+app.get('/api/draft', requireLogin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT state FROM drafts WHERE user_id=$1', [req.session.user.id]);
+    res.json(r.rows[0] ? { state: r.rows[0].state } : {});
+  } catch (e) { res.json({}); }
+});
+
+app.put('/api/draft', requireLogin, async (req, res) => {
+  try {
+    await pool.query(
+      `INSERT INTO drafts(user_id, state, updated_at) VALUES($1,$2,NOW())
+       ON CONFLICT(user_id) DO UPDATE SET state=$2, updated_at=NOW()`,
+      [req.session.user.id, JSON.stringify(req.body)]
+    );
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false }); }
+});
+
+// ── SUBMIT ─────────────────────────────────────────────────────────────────
 
 app.post('/api/submit', requireLogin, async (req, res) => {
   const u = req.session.user;
