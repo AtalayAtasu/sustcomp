@@ -202,7 +202,7 @@ function adminHTML(users) {
   .step-body strong{color:#1A1A1A}
   .step-body a{color:#004080}
   pre{background:#F0F4F8;border-radius:8px;padding:1rem;font-size:0.78rem;overflow-x:auto;margin-top:0.75rem;line-height:1.6;border:1px solid #D5E6F5}
-  .warn{background:#FEF9E7;border:1px solid #F9E4A0;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#7A5B14;margin-top:1rem}
+  .warn{background:#EBF5FD;border:1px solid #B3D9F5;border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:#2B7DB0;margin-top:1rem}
 </style>
 </head>
 <body>
