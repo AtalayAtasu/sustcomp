@@ -392,7 +392,7 @@ async function sendEmail(d) {
 
   await mailer.sendMail({
     from:    `"SustComp" <${process.env.GMAIL_USER}>`,
-    to:      process.env.GMAIL_USER,
+    to:      'atalay.atasu@gmail.com',
     subject: `[SustComp] ${d.cohortName || 'No cohort'} — ${d.username} — ${d.challengeName || 'Submission'}`,
     html:    body,
     attachments: [{
@@ -444,7 +444,7 @@ function loginHTML(error = '') {
     <button class="btn" type="submit">Sign in →</button>
   </form>
   <div class="footer">© 2026 AcpitConsulting<br>
-    <a href="mailto:acpitcons.adm@gmail.com">acpitcons.adm@gmail.com</a></div>
+    <a href="mailto:atalay.atasu@gmail.com">atalay.atasu@gmail.com</a></div>
 </div></body></html>`;
 }
 
