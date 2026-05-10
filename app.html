@@ -240,7 +240,7 @@ const LEVERS=[
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},consultantReport:'',cfoHtml:''});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -426,7 +426,7 @@ function coachingDigest(chats){
 }
 
 /* ─── AI CONSULTANT ─── */
-function AIConsultant({st, initialReport, onReportChange}){
+function AIConsultant({st, initialReport, onReportChange, regenUsed, onRegenUsed}){
   const [state,setState]=useState(initialReport?'done':'idle');
   const [report,setReport]=useState(initialReport||'');
   const [error,setError]=useState('');
@@ -513,12 +513,15 @@ Search for current information about regulatory trends, leading company response
         {state==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={generate}>✦ Get Consultant Opinion</button>}
         {state==='done'&&<div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
           <span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10}}>✓ Analysis complete</span>
-          <button className="btn btn-s" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setState('idle');setReport('');if(onReportChange)onReportChange('');}}>↺ Regenerate</button>
+          {!regenUsed&&<button className="btn btn-s" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setState('idle');setReport('');if(onReportChange)onReportChange('');if(onRegenUsed)onRegenUsed();}}>↺ Regenerate</button>}
         </div>}
       </div>
 
-      {state==='idle'&&<div style={{padding:'1.25rem 1.75rem',color:'#666',fontSize:'0.85rem',lineHeight:1.6}}>
-        Request an independent expert opinion on your challenge — with live web research on your industry and comparable cases.
+      {state==='idle'&&<div style={{padding:'1.25rem 1.75rem',fontSize:'0.85rem',lineHeight:1.6}}>
+        <p style={{color:'#666',marginBottom:'0.75rem'}}>Request an independent expert opinion on your challenge — with live web research on your industry and comparable cases.</p>
+        <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.65rem 0.9rem',color:'#5A4000',fontSize:'0.8rem'}}>
+          <strong>⚠ Before you generate:</strong> make sure your stakeholder analysis, strategic lever, and NPV+ inputs across steps 1–3 are as complete as possible. You have one opportunity to regenerate this report — save it for genuine revisions, not first attempts.
+        </div>
       </div>}
       {state==='loading'&&<div style={{padding:'1.5rem 1.75rem',display:'flex',alignItems:'center',gap:12,color:'#888',fontSize:'0.85rem'}}>
         <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>Researching industry context and producing expert analysis…
@@ -543,7 +546,7 @@ Search for current information about regulatory trends, leading company response
 }
 
 /* ─── CFO REPORT ─── */
-function CFOReport({st, initialHtml, onHtmlChange}){
+function CFOReport({st, initialHtml, onHtmlChange, regenUsed, onRegenUsed}){
   const [html,setHtml]=useState(initialHtml||'');
   const [genState,setGenState]=useState(initialHtml?'done':'idle');
   const [error,setError]=useState('');
@@ -629,12 +632,15 @@ ${html}
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
           {genState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={runGenerate}>✦ Generate CFO Report</button>}
           {genState==='done'&&<button className="btn btn-p no-print" style={{fontSize:'0.82rem'}} onClick={openPrint}>Print / Export PDF</button>}
-          {genState==='done'&&<button className="btn btn-s no-print" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setGenState('idle');setHtml('');if(onHtmlChange)onHtmlChange('');}}>↺ Regenerate</button>}
+          {genState==='done'&&!regenUsed&&<button className="btn btn-s no-print" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setGenState('idle');setHtml('');if(onHtmlChange)onHtmlChange('');if(onRegenUsed)onRegenUsed();}}>↺ Regenerate</button>}
           {genState==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10,alignSelf:'center'}}>✓ Generated</span>}
         </div>
       </div>
-      {genState==='idle'&&<div style={{padding:'1.25rem 1.75rem',color:'#666',fontSize:'0.85rem',lineHeight:1.6}}>
-        Generate a professional CFO-ready executive memo synthesising your full analysis, AI coaching insights, and the consultant opinion.
+      {genState==='idle'&&<div style={{padding:'1.25rem 1.75rem',fontSize:'0.85rem',lineHeight:1.6}}>
+        <p style={{color:'#666',marginBottom:'0.75rem'}}>Generate a professional CFO-ready executive memo synthesising your full analysis, AI coaching insights, and the consultant opinion.</p>
+        <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.65rem 0.9rem',color:'#5A4000',fontSize:'0.8rem'}}>
+          <strong>⚠ Before you generate:</strong> confirm all your inputs across steps 1–3 are finalised and that you have reviewed the AI Consultant opinion above. You have one opportunity to regenerate this report — treat it as a last resort after substantive revisions, not a first draft.
+        </div>
       </div>}
       {genState==='loading'&&<div style={{padding:'2rem 1.75rem',display:'flex',alignItems:'center',gap:14,color:'#888',fontSize:'0.85rem'}}>
         <div className="spin" style={{width:22,height:22,borderWidth:3}}/> Generating executive report — synthesising your analysis and AI coaching insights…
@@ -1043,9 +1049,9 @@ function S4({st,set}){
       <strong>How these reports are generated:</strong> The AI Consultant and CFO Report below draw on everything you entered across all four stages — including any revisions you made after reading the AI feedback on each step. If you want to refine your inputs further, use the Back button, update your answers, then return here to generate fresh reports.
     </div>
 
-    <AIConsultant st={st} initialReport={st.consultantReport||''} onReportChange={r=>set(s=>({...s,consultantReport:r}))}/>
+    <AIConsultant st={st} initialReport={st.consultantReport||''} onReportChange={r=>set(s=>({...s,consultantReport:r}))} regenUsed={!!st.consultantRegenUsed} onRegenUsed={()=>set(s=>({...s,consultantRegenUsed:true}))}/>
 
-    <CFOReport st={st} initialHtml={st.cfoHtml||''} onHtmlChange={h=>set(s=>({...s,cfoHtml:h}))}/>
+    <CFOReport st={st} initialHtml={st.cfoHtml||''} onHtmlChange={h=>set(s=>({...s,cfoHtml:h}))} regenUsed={!!st.cfoRegenUsed} onRegenUsed={()=>set(s=>({...s,cfoRegenUsed:true}))}/>
 
     <div style={{background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 100%)',borderRadius:'var(--r-lg)',padding:'2rem',textAlign:'center',border:'1px solid rgba(74,171,232,0.3)'}}>
       <h3 style={{color:'white',fontSize:'1.15rem'}}>Submit to your Instructor</h3>
