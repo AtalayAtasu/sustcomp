@@ -240,7 +240,7 @@ const LEVERS=[
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]}});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},consultantReport:'',cfoHtml:''});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -391,44 +391,29 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
             </svg>
           </div>
-          <div>
-            <div className="ai-panel-ttl">AI Strategy Review {done&&<span style={{fontSize:'0.7rem',fontWeight:400,opacity:0.55,marginLeft:6}}>✓ used</span>}</div>
-            <div className="ai-panel-sub">{stageLabel} — probing questions, industry cases & gap analysis</div>
-          </div>
+  return(
+    <div style={{marginTop:'1.5rem',background:'white',border:'1px solid var(--border)',borderLeft:'4px solid var(--blue)',borderRadius:'var(--r)',padding:'1.25rem 1.5rem'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.75rem'}}>
+        <div>
+          <span style={{fontSize:'0.65rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--blue)'}}>AI Strategy Review</span>
+          <span style={{fontSize:'0.72rem',color:'#999',marginLeft:8}}>{stageLabel}</span>
         </div>
-        <span className={`ai-chevron ${open?'open':''}`}>▼</span>
+        {done&&<span style={{fontSize:'0.65rem',background:'#E8F5E9',color:'#2E7D32',padding:'2px 8px',borderRadius:10,fontWeight:500}}>✓ Feedback received</span>}
       </div>
-      {open&&<div className="ai-body">
-        {!started&&<>
-          <div style={{background:'rgba(74,171,232,0.1)',border:'1px solid rgba(74,171,232,0.3)',borderRadius:'var(--r)',padding:'0.75rem 1rem',marginBottom:'1rem',fontSize:'0.8rem',color:'rgba(255,255,255,0.7)',lineHeight:1.55}}>
-            <strong style={{color:'var(--gold)'}}>⚠ One interaction per step.</strong> Your group has a single AI feedback request for this stage. Make sure your analysis is as complete as possible before requesting feedback — you cannot repeat it.
-          </div>
-          <button className="ai-trigger-btn" onClick={doStart} disabled={loading}>
-            <span>✦</span> Get AI Feedback on This Stage
-          </button>
-        </>}
-        {started&&<div className="chat-messages">
-          {msgs.filter(m=>m.role==='assistant').length===0&&loading&&(
-            <div className="chat-msg"><div className="mini-av ai">AI</div><div className="chat-bubble ai"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>
-          )}
-          {msgs.map((m,i)=>{
-            if(i===0)return null;
-            return(
-              <div key={i} className={`chat-msg ${m.role==='user'?'user':''}`}>
-                <div className={`mini-av ${m.role==='assistant'?'ai':'usr'}`}>{m.role==='assistant'?'AI':'You'}</div>
-                <div className={`chat-bubble ${m.role==='assistant'?'ai':'user'}`}>
-                  {m.role==='assistant'?renderMsg(m.content):m.content}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={endRef}/>
-        </div>}
-        {done&&<div style={{marginTop:'0.75rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.35)',borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'0.6rem'}}>
-          AI feedback for this stage is complete. Refine your analysis above, then continue to the next step.
-        </div>}
-        {error&&<div style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--gold)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
+      {!started&&<>
+        <div style={{fontSize:'0.8rem',color:'var(--navy)',lineHeight:1.6,marginBottom:'0.875rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'0.7rem 0.9rem'}}>
+          <strong>⚠ One interaction per step.</strong> Make sure your analysis is as complete as possible before requesting feedback — this option cannot be repeated.
+        </div>
+        <button className="btn btn-p" onClick={doStart} disabled={loading} style={{fontSize:'0.82rem'}}>✦ Get AI Feedback on This Stage</button>
+      </>}
+      {started&&!done&&loading&&<div style={{display:'flex',alignItems:'center',gap:10,padding:'0.75rem 0',color:'#888',fontSize:'0.82rem'}}>
+        <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>Generating feedback…
       </div>}
+      {done&&<div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',lineHeight:1.75,fontSize:'0.88rem',color:'var(--navy)'}}>
+        {renderMsg(msgs.find(m=>m.role==='assistant')?.content||'')}
+      </div>}
+      {done&&<div style={{marginTop:'0.5rem',fontSize:'0.72rem',color:'#bbb'}}>Refine your analysis above based on this feedback, then continue to the next step.</div>}
+      {error&&<div style={{color:'#c33',fontSize:'0.8rem',marginTop:'0.5rem'}}>{error} <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
     </div>
   );
 }
@@ -448,12 +433,10 @@ function coachingDigest(chats){
 }
 
 /* ─── AI CONSULTANT ─── */
-function AIConsultant({st}){
-  const [state,setState]=useState('idle'); // idle|loading|done|error|needkey
-  const [report,setReport]=useState('');
+function AIConsultant({st, initialReport, onReportChange}){
+  const [state,setState]=useState(initialReport?'done':'idle');
+  const [report,setReport]=useState(initialReport||'');
   const [error,setError]=useState('');
-  const [keyDraft,setKeyDraft]=useState('');
-  const [open,setOpen]=useState(false);
   const [activeTab,setActiveTab]=useState('q1');
 
   const generate=async()=>{
@@ -476,12 +459,7 @@ COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'
 CHALLENGE: ${st.fish.name||'sustainability challenge'}
 ${st.fish.desc||''}
 
-The group has produced their own analysis. Search for current information about:
-1. Key regulatory and market trends affecting this challenge in ${st.grp.industry||'this industry'}
-2. How leading companies are responding to "${st.fish.name}"
-3. Real investment cases and NPV benchmarks for similar sustainability initiatives
-
-Then produce your own independent expert three-stage analysis as instructed. Be specific, cite real examples, and provide constructive observations that enrich the group's thinking.`;
+Search for current information about regulatory trends, leading company responses, and real investment cases for this challenge and industry. Then produce your independent expert three-stage analysis. Be specific, cite real examples, and provide constructive observations that enrich the group's thinking.`;
 
     try{
       let data,resp;
@@ -490,46 +468,20 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
         resp=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({
-            model:'claude-sonnet-4-6',
-            max_tokens:1400,
-            system:sysPrompt,
-            tools:[{"type":"web_search_20250305","name":"web_search"}],
-            messages:[{role:'user',content:prompt}]
-          })
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
         });
         data=await resp.json();
-        if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){
-          await new Promise(r=>setTimeout(r,(attempt+1)*20000));
-          continue;
-        }
+        if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
         break;
       }
       if(!resp.ok) throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
-      // Extract all text blocks (web search may produce multiple content blocks)
       const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n\n');
       if(!text) throw new Error('No text in response');
-      setReport(text);
-      setState('done');
-      setOpen(true);
+      setReport(text);setState('done');
+      if(onReportChange) onReportChange(text);
     }catch(e){setError(e.message);setState('error');}
   };
 
-  const start=()=>{
-    if(!getApiKey()){setState('needkey');return;}
-    generate();
-  };
-
-  const submitKey=async()=>{
-    if(!keyDraft.trim())return;
-    setApiKey(keyDraft.trim());
-    try{
-      await callClaude('Reply OK.',[{role:'user',content:'OK?'}],5);
-      generate();
-    }catch(e){setError('Key test failed: '+e.message);setState('error');}
-  };
-
-  // Parse report into tabs
   const sections={q1:'',q2:'',q3:''};
   if(report){
     const q1m=report.match(/##\s*Q1[^#]*([\s\S]*?)(?=##\s*Q2|$)/i);
@@ -542,56 +494,50 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
   }
 
   const renderMd=text=>text.split('\n').map((ln,i)=>{
-    if(/^###\s/.test(ln))return<h4 key={i} style={{fontSize:'0.88rem',fontWeight:600,color:'white',margin:'1rem 0 0.3rem'}}>{ln.replace(/^###\s/,'')}</h4>;
-    if(/^##\s/.test(ln))return<h3 key={i} style={{fontSize:'0.95rem',fontWeight:600,color:'var(--gold)',margin:'1rem 0 0.4rem'}}>{ln.replace(/^##\s/,'')}</h3>;
-    if(/^[-•]\s/.test(ln))return<li key={i} style={{marginBottom:'0.3rem',color:'rgba(255,255,255,0.85)'}} dangerouslySetInnerHTML={{__html:ln.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+    if(/^###\s/.test(ln))return<h4 key={i} style={{fontSize:'0.85rem',fontWeight:700,color:'var(--navy)',margin:'1rem 0 0.3rem'}}>{ln.replace(/^###\s/,'')}</h4>;
+    if(/^##\s/.test(ln))return<h3 key={i} style={{fontSize:'0.9rem',fontWeight:700,color:'var(--blue)',margin:'0.875rem 0 0.3rem'}}>{ln.replace(/^##\s/,'')}</h3>;
+    if(/^[-•]\s/.test(ln))return<li key={i} style={{marginBottom:'0.3rem',color:'#333',lineHeight:1.65}} dangerouslySetInnerHTML={{__html:ln.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
     if(ln.trim()==='')return<br key={i}/>;
-    return<p key={i} style={{marginBottom:'0.6rem',color:'rgba(255,255,255,0.85)',lineHeight:1.65}} dangerouslySetInnerHTML={{__html:ln.replace(/\*\*(.*?)\*\*/g,'<strong style="color:white">$1</strong>')}}/>;
+    return<p key={i} style={{marginBottom:'0.5rem',color:'#444',lineHeight:1.65}} dangerouslySetInnerHTML={{__html:ln.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
   });
 
   const TABS=[{id:'q1',label:'Q1 · Stakeholders'},{id:'q2',label:'Q2 · Strategy'},{id:'q3',label:'Q3 · NPV+'}];
 
   return(
-    <div style={{background:'linear-gradient(135deg,#002A5C 0%,#004080 100%)',borderRadius:'var(--r-lg)',border:'1px solid rgba(74,171,232,0.35)',overflow:'hidden',marginBottom:'1.5rem'}}>
-      <div style={{padding:'1.75rem 2rem'}}>
-        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
-          <div style={{display:'flex',alignItems:'center',gap:14}}>
-            <div style={{width:46,height:46,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <svg width="22" height="22" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#002A5C" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#002A5C" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#002A5C" strokeWidth="1.8"/></svg>
-            </div>
-            <div>
-              <div style={{fontSize:'1.05rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI Consultant Opinion</div>
-              <div style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.55)',marginTop:3}}>Independent expert analysis with live web research — Q1, Q2 & Q3</div>
-            </div>
+    <div className="card" style={{marginBottom:'1.5rem',padding:0,overflow:'hidden'}}>
+      <div style={{background:'var(--navy)',padding:'1.25rem 1.75rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.75rem'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:36,height:36,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="18" height="18" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#002A5C" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#002A5C" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#002A5C" strokeWidth="1.8"/></svg>
           </div>
-          {state==='idle'&&<button className="ai-trigger-btn" style={{margin:0}} onClick={start}>✦ Get Consultant Opinion</button>}
-          {state==='done'&&<button style={{background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.7)',borderRadius:'var(--r)',padding:'0.5rem 1rem',cursor:'pointer',fontSize:'0.8rem',fontFamily:'inherit'}} onClick={()=>setOpen(o=>!o)}>{open?'Hide ▲':'Show ▼'}</button>}
+          <div>
+            <div style={{fontSize:'0.95rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI Consultant Opinion</div>
+            <div style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.5)',marginTop:2}}>Independent expert analysis with live web research</div>
+          </div>
         </div>
-        {state==='needkey'&&<div className="ai-key-setup" style={{marginTop:'1.25rem'}}>
-          <p>Enter your <strong>Anthropic API key</strong> to enable the AI Consultant with web search.</p>
-          <div className="ai-key-row">
-            <input className="ai-key-input" type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
-            <button className="ai-key-btn" onClick={submitKey}>Connect →</button>
-          </div>
-        </div>}
-        {state==='loading'&&<div style={{marginTop:'1.25rem',display:'flex',alignItems:'center',gap:12}}>
-          <div style={{display:'flex',gap:5}}><div className="dot"/><div className="dot"/><div className="dot"/></div>
-          <span style={{color:'rgba(255,255,255,0.5)',fontSize:'0.82rem'}}>Researching industry context and producing expert analysis…</span>
-        </div>}
-        {state==='error'&&<div style={{marginTop:'1rem',color:'#FC9D9D',fontSize:'0.82rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--gold)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.82rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
+        {state==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={generate}>✦ Get Consultant Opinion</button>}
+        {state==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10}}>✓ Analysis complete</span>}
       </div>
 
-      {state==='done'&&open&&<div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'0 2rem 2rem'}}>
-        <div style={{display:'flex',gap:4,marginBottom:'1.25rem',background:'rgba(0,0,0,0.2)',borderRadius:30,padding:4,width:'fit-content'}}>
-          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.35rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',fontWeight:500,background:activeTab===t.id?'var(--gold)':'none',color:activeTab===t.id?'#002A5C':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>{t.label}</button>)}
+      {state==='idle'&&<div style={{padding:'1.25rem 1.75rem',color:'#666',fontSize:'0.85rem',lineHeight:1.6}}>
+        Request an independent expert opinion on your challenge — with live web research on your industry and comparable cases.
+      </div>}
+      {state==='loading'&&<div style={{padding:'1.5rem 1.75rem',display:'flex',alignItems:'center',gap:12,color:'#888',fontSize:'0.85rem'}}>
+        <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>Researching industry context and producing expert analysis…
+      </div>}
+      {state==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
+
+      {state==='done'&&<div style={{padding:'1.25rem 1.75rem'}}>
+        <div style={{display:'flex',gap:4,marginBottom:'1.25rem',background:'var(--blue-l)',borderRadius:30,padding:4,width:'fit-content'}}>
+          {TABS.map(t=><button key={t.id} onClick={()=>setActiveTab(t.id)} style={{padding:'0.3rem 1rem',borderRadius:20,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:'0.78rem',fontWeight:500,background:activeTab===t.id?'var(--navy)':'transparent',color:activeTab===t.id?'white':'var(--navy)',transition:'all 0.15s'}}>{t.label}</button>)}
         </div>
-        <div style={{maxHeight:420,overflowY:'auto',paddingRight:4}}>
-          <ul style={{paddingLeft:'1.2rem'}}>
+        <div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1.25rem 1.5rem',lineHeight:1.7}}>
+          <ul style={{paddingLeft:'1.1rem',margin:0}}>
             {renderMd(sections[activeTab]||'No content for this section.')}
           </ul>
         </div>
-        <div style={{marginTop:'1rem',fontSize:'0.7rem',color:'rgba(255,255,255,0.25)',borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'0.75rem'}}>
-          AI Consultant analysis is generated using live web search and is intended as a constructive complement to your group's own work — not a definitive assessment. Always apply your own judgement.
+        <div style={{marginTop:'0.75rem',fontSize:'0.7rem',color:'#bbb'}}>
+          Generated using live web search. Intended as a complement to your group's analysis — always apply your own judgement.
         </div>
       </div>}
     </div>
@@ -599,11 +545,10 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
 }
 
 /* ─── CFO REPORT ─── */
-function CFOReport({st, onClose, onHtmlReady}){
-  const [html,setHtml]=useState('');
-  const [genState,setGenState]=useState(getApiKey()?'loading':'needkey');
+function CFOReport({st, initialHtml, onHtmlChange}){
+  const [html,setHtml]=useState(initialHtml||'');
+  const [genState,setGenState]=useState(initialHtml?'done':'idle');
   const [error,setError]=useState('');
-  const [keyDraft,setKeyDraft]=useState('');
 
   const activeSth=st.sth.filter(x=>x.on);
   const cap=parseFloat(st.capex)||0;
@@ -628,69 +573,27 @@ function CFOReport({st, onClose, onHtmlReady}){
     const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
     callClaude(system,[{role:'user',content:prompt}],2400,'claude-sonnet-4-6')
-      .then(text=>{setHtml(text);setGenState('done');if(onHtmlReady)onHtmlReady(text);})
+      .then(text=>{setHtml(text);setGenState('done');if(onHtmlChange)onHtmlChange(text);})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
 
-  useEffect(()=>{ if(genState==='loading'&&getApiKey()) runGenerate(); },[]);
-
-  const submitKey=()=>{
-    if(!keyDraft.trim())return;
-    setApiKey(keyDraft.trim());
-    runGenerate();
-  };
-
-  return(
-    <div className="report-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="report-doc">
-        <div className="report-doc-hd">
-          <h2>Sustainability Strategy Opportunity<br/><span style={{fontSize:'1.1rem',fontWeight:400,color:'rgba(255,255,255,0.7)'}}>{st.fish.name||'Challenge Assessment'}</span></h2>
-          <div className="meta">Prepared by: {st.grp.name||'Executive Team'}{st.grp.industry?` · ${st.grp.industry}`:''} · {new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
-          {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)
-            ? <div style={{marginTop:'0.5rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.45)'}}>
-                AI coaching insights from {[st.chats.q1?.filter(m=>m.role==='assistant').length||0, st.chats.q2?.filter(m=>m.role==='assistant').length||0, st.chats.q3?.filter(m=>m.role==='assistant').length||0].reduce((a,b)=>a+b,0)} exchanges incorporated
-              </div>
-            : null}
-          <div className="gold-line"/>
-        </div>
-        {genState==='needkey'&&(
-          <div style={{padding:'2.5rem'}}>
-            <div className="ai-key-setup" style={{background:'#F5F8FC',border:'1px solid rgba(0,64,128,0.15)'}}>
-              <p style={{color:'#333'}}>Enter your <strong style={{color:'var(--navy)'}}>Anthropic API key</strong> to generate the AI-augmented CFO report.</p>
-              <div className="ai-key-row">
-                <input className="ai-key-input" style={{background:'white',border:'1px solid rgba(0,0,0,0.2)',color:'#333'}} type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…"/>
-                <button className="ai-key-btn" onClick={submitKey}>Generate →</button>
-              </div>
-              <div className="ai-key-note" style={{color:'#999'}}>Get your key at console.anthropic.com</div>
-            </div>
-          </div>
-        )}
-        {genState==='loading'&&<div className="loading-report"><div className="spin"/><p>Generating executive report…</p><p className="sub">Synthesising your analysis and AI coaching insights</p></div>}
-        {genState==='error'&&<div style={{padding:'2rem',color:'#C0392B',fontSize:'0.9rem'}}>Generation failed: {error}<br/><button className="btn btn-p" style={{marginTop:'1rem'}} onClick={runGenerate}>Retry</button></div>}
-        {genState==='done'&&<div className="report-body" dangerouslySetInnerHTML={{__html:html}}/>}
-        <div className="report-actions no-print">
-          {genState==='done'&&<button className="btn btn-p" onClick={()=>{
-            const win=window.open('','_blank');
-            const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-            const chatCount=[st.chats?.q1,st.chats?.q2,st.chats?.q3].flatMap(c=>c||[]).filter(m=>m.role==='assistant').length;
-            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CFO Report — ${(st.fish.name||'Sustainability Strategy').replace(/</g,'&lt;')}</title>
+  const openPrint=()=>{
+    const win=window.open('','_blank');
+    const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const chatCount=[st.chats?.q1,st.chats?.q2,st.chats?.q3].flatMap(c=>c||[]).filter(m=>m.role==='assistant').length;
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CFO Report — ${(st.fish.name||'Sustainability Strategy').replace(/</g,'&lt;')}</title>
 <style>
 @page{margin:2.2cm 2.5cm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,'Times New Roman',serif;font-size:10.5pt;line-height:1.72;color:#111;background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .cover{border-bottom:3px solid #004080;padding-bottom:1.4rem;margin-bottom:2rem}
-.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
-.logo-name{font-family:Georgia,serif;font-weight:700;font-size:1.5rem;letter-spacing:0.22em;color:#004080}
-.logo-tag{font-size:8pt;color:#888;letter-spacing:0.06em;margin-top:2px}
 h1{font-family:Georgia,serif;font-size:15pt;color:#002A5C;margin-bottom:0.3rem;font-weight:700}
 .meta{font-size:9pt;color:#666;margin-top:0.4rem}
 .ai-note{font-size:8pt;color:#888;margin-top:0.25rem;font-style:italic}
 h3{font-family:Georgia,serif;font-size:11.5pt;color:#002A5C;margin:1.5rem 0 0.45rem;padding-bottom:0.3rem;border-bottom:1px solid #C0D8EE;font-weight:700}
-p{margin-bottom:0.8rem}
-ul,ol{padding-left:1.4rem;margin-bottom:0.8rem}
-li{margin-bottom:0.22rem}
+p{margin-bottom:0.8rem}ul,ol{padding-left:1.4rem;margin-bottom:0.8rem}li{margin-bottom:0.22rem}
 strong{color:#002A5C;font-weight:700}
-.highlight-box{background:#E3EFF9;border-left:4px solid #004080;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:3px}
+.highlight-box{background:#E3EFF9;border-left:4px solid #004080;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;border-radius:3px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table{width:100%;border-collapse:collapse;margin:0.8rem 0;font-size:9.5pt}
 th{background:#004080;color:white;padding:0.45rem 0.6rem;text-align:left;font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 td{padding:0.45rem 0.6rem;border-bottom:1px solid #D0E0F0}
@@ -698,29 +601,37 @@ tr:nth-child(even) td{background:#EEF4FB;-webkit-print-color-adjust:exact;print-
 footer{margin-top:3rem;padding-top:0.8rem;border-top:1px solid #C0D8EE;font-size:8pt;color:#999;text-align:center}
 </style></head><body>
 <div class="cover">
-  <div class="logo-row">
-    <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
-      <circle cx="22" cy="22" r="19.5" stroke="#004080" stroke-width="2"/>
-      <ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#004080" stroke-width="1.3"/>
-      <ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="#004080" stroke-width="1.3"/>
-      <line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#004080" stroke-width="1.3"/>
-      <line x1="22" y1="2.5" x2="22" y2="41.5" stroke="#004080" stroke-width="1.3"/>
-    </svg>
-  </div>
   <h1>Sustainability Strategy Opportunity: ${(st.fish.name||'Challenge Assessment').replace(/</g,'&lt;')}</h1>
   <div class="meta">Prepared by: ${(st.grp.name||'Executive Team').replace(/</g,'&lt;')}${st.grp.industry?' · '+st.grp.industry.replace(/</g,'&lt;'):''} &nbsp;·&nbsp; ${date}</div>
-  ${chatCount>0?`<div class="ai-note">This report incorporates insights from ${chatCount} AI coaching exchange${chatCount>1?'s':''} across the three stages of analysis.</div>`:''}
+  ${chatCount>0?`<div class="ai-note">Incorporates insights from ${chatCount} AI coaching exchange${chatCount>1?'s':''} across the three analysis stages.</div>`:''}
 </div>
 ${html}
-<footer>© AcpitConsulting &nbsp;·&nbsp; ${date} &nbsp;·&nbsp; <a href="mailto:acpitcons.adm@gmail.com" style="color:#999">acpitcons.adm@gmail.com</a></footer>
+<footer>© AcpitConsulting &nbsp;·&nbsp; ${date}</footer>
 </body></html>`);
-            win.document.close();
-            win.focus();
-            setTimeout(()=>win.print(),600);
-          }}>Print / Export PDF</button>}
-          <button className="btn btn-s" onClick={onClose}>Close</button>
+    win.document.close();win.focus();setTimeout(()=>win.print(),600);
+  };
+
+  return(
+    <div className="card" style={{marginBottom:'1.5rem',padding:0,overflow:'hidden'}}>
+      <div style={{background:'var(--navy)',padding:'1.25rem 1.75rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.75rem'}}>
+        <div>
+          <div style={{fontSize:'0.95rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI CFO Report</div>
+          <div style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.5)',marginTop:2}}>AI-augmented investment-grade executive memo</div>
+        </div>
+        <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+          {genState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={runGenerate}>✦ Generate CFO Report</button>}
+          {genState==='done'&&<button className="btn btn-p no-print" style={{fontSize:'0.82rem'}} onClick={openPrint}>Print / Export PDF</button>}
+          {genState==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10,alignSelf:'center'}}>✓ Generated</span>}
         </div>
       </div>
+      {genState==='idle'&&<div style={{padding:'1.25rem 1.75rem',color:'#666',fontSize:'0.85rem',lineHeight:1.6}}>
+        Generate a professional CFO-ready executive memo synthesising your full analysis, AI coaching insights, and the consultant opinion.
+      </div>}
+      {genState==='loading'&&<div style={{padding:'2rem 1.75rem',display:'flex',alignItems:'center',gap:14,color:'#888',fontSize:'0.85rem'}}>
+        <div className="spin" style={{width:22,height:22,borderWidth:3}}/> Generating executive report — synthesising your analysis and AI coaching insights…
+      </div>}
+      {genState==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Generation failed: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={runGenerate}>Retry</button></div>}
+      {genState==='done'&&<div className="report-body" style={{borderTop:'1px solid var(--border)'}} dangerouslySetInnerHTML={{__html:html}}/>}
     </div>
   );
 }
@@ -1007,9 +918,7 @@ Challenge this financial model. What assumptions are most fragile? What is the s
 }
 
 /* ─── STEP 4: SUMMARY ─── */
-function S4({st}){
-  const [showReport,setShowReport]=useState(false);
-  const [reportHtml,setReportHtml]=useState('');
+function S4({st,set}){
   const [submitted,setSubmitted]=useState(false);
   const [submitting,setSubmitting]=useState(false);
   const [submitErr,setSubmitErr]=useState('');
@@ -1039,7 +948,7 @@ function S4({st}){
           npv5,npv10,
           rate:parseFloat(rate)||0,
           currency:curr,
-          reportHtml
+          reportHtml:st.cfoHtml||''
         })
       });
       if(!resp.ok)throw new Error('Server error '+resp.status);
@@ -1049,7 +958,6 @@ function S4({st}){
   };
 
   return<div>
-    {showReport&&<CFOReport st={st} onClose={()=>setShowReport(false)} onHtmlReady={setReportHtml}/>}
     <div className="card" style={{marginBottom:'1.5rem'}}>
 
       <div className="ey">Complete output</div>
@@ -1062,7 +970,6 @@ function S4({st}){
         </div>
         <div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap'}}>
           <button className="btn btn-s no-print" onClick={()=>window.print()}>Print summary</button>
-          <button className="btn btn-report no-print" onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
         </div>
       </div>
       {fish.name&&<div style={{marginTop:'1.25rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',borderLeft:'4px solid var(--blue)'}}>
@@ -1123,16 +1030,17 @@ function S4({st}){
       </div>
     </div>
 
-    <AIConsultant st={st}/>
+    <AIConsultant st={st} initialReport={st.consultantReport||''} onReportChange={r=>set(s=>({...s,consultantReport:r}))}/>
+
+    <CFOReport st={st} initialHtml={st.cfoHtml||''} onHtmlChange={h=>set(s=>({...s,cfoHtml:h}))}/>
 
     <div style={{background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 100%)',borderRadius:'var(--r-lg)',padding:'2rem',textAlign:'center',border:'1px solid rgba(74,171,232,0.3)'}}>
-      <h3 style={{color:'white',fontSize:'1.15rem'}}>Ready to present to your CFO?</h3>
+      <h3 style={{color:'white',fontSize:'1.15rem'}}>Submit to your Instructor</h3>
       <p style={{color:'rgba(255,255,255,0.6)',fontSize:'0.85rem',margin:'0.5rem auto 1.5rem',maxWidth:'480px'}}>
-        Generate an AI-augmented executive memo that synthesises your three-stage analysis
-        {(st.chats?.q1?.length||st.chats?.q2?.length||st.chats?.q3?.length)?', your AI coaching dialogue,':''} and the consultant opinion into a CFO-ready investment recommendation.
+        When you are happy with your analysis and AI-generated reports, submit everything to your instructor.
+        {!st.cfoHtml&&<span style={{display:'block',marginTop:'0.4rem',color:'rgba(252,157,157,0.8)',fontSize:'0.8rem'}}>Generate the CFO Report above before submitting for a complete submission.</span>}
       </p>
       <div style={{display:'flex',gap:'1rem',justifyContent:'center',flexWrap:'wrap'}}>
-        <button className="btn btn-g no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem'}} onClick={()=>setShowReport(true)}>✦ Generate AI CFO Report</button>
         <button className="btn btn-p no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem',opacity:submitted?0.6:1}} onClick={submitToInstructor} disabled={submitting||submitted}>
           {submitted?'✓ Submitted to Instructor':submitting?'Submitting…':'↑ Submit to Instructor'}
         </button>
