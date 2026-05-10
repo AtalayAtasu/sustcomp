@@ -476,7 +476,12 @@ function AIConsultant({st, initialReport, onReportChange, regenUsed, onRegenUsed
 
 You are a senior strategy advisor — part McKinsey partner, part impact investor — helping an executive education group turn their sustainability analysis into a concrete business plan. You have access to web search to ground your advice in real market context.
 
-Your task is to produce a STRATEGIC ADVISOR BRIEF: four sections that build on what the group has already done and tell them what to do next. Do NOT re-examine or critique their analysis — take it as given and move forward from it.
+Your task is to produce a STRATEGIC ADVISOR BRIEF: four sections that build on what the group has already done and tell them what to do next.
+
+CRITICAL: You will be given AI COACHING INSIGHTS — these are the specific challenges and observations raised by an AI professor during the group's three analysis stages. Treat these as a senior colleague's notes. Your brief must actively incorporate them:
+- If the coaching raised a challenge the group appears not to have addressed in their inputs, name it explicitly and resolve it in your advice (e.g. "The coaching flagged X — here is how the business plan should account for it").
+- If the coaching identified a strong point, reinforce and build on it.
+- Do not merely acknowledge the coaching passively — weave it into the substance of your four sections wherever relevant.
 
 Format your output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>. No markdown, no preamble, no sign-off — output inner HTML only, starting directly with content.
 
@@ -520,9 +525,9 @@ KEY STAKEHOLDER OPPORTUNITIES: ${sthText||'Not completed'}
 
 FINANCIAL MODEL (WACC ${st.rate}%): CAPEX ${cap>0?fmt(-cap,st.curr):'none'} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}
 CFO pitch: ${(st.pitch||'').slice(0,200)}
-${digest?`\nAI COACHING INSIGHTS:\n${digest}`:''}
+${digest?`\n===AI COACHING INSIGHTS (from Q1/Q2/Q3 professor feedback — you MUST incorporate these)===\n${digest}\n===END COACHING INSIGHTS===\n`:'(No coaching insights recorded — the group did not use the AI feedback panels.)'}
 
-Use web search to find current market context, then write the four-section Strategic Advisor Brief.`;
+Use web search to find current market context. Then write the four-section Strategic Advisor Brief, ensuring the coaching insights above are actively woven into your advice, not ignored.`;
 
     try{
       let data,resp;
