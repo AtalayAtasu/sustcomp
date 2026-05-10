@@ -341,67 +341,34 @@ function Waterfall({sth,capex,rate,horizon,curr}){
 }
 
 /* ─── AI CHAT PANEL ─── */
-function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
-  const [open,setOpen]=useState(false);
-  const [msgs,setMsgs]=useState([]);
-  const [input,setInput]=useState('');
+function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
+  // Restore from saved chat history if returning to this step
+  const alreadyUsed=(initialMsgs||[]).length>1;
+  const [open,setOpen]=useState(alreadyUsed);
+  const [msgs,setMsgs]=useState(alreadyUsed?initialMsgs:[]);
   const [loading,setLoading]=useState(false);
-  const [started,setStarted]=useState(false);
+  const [started,setStarted]=useState(alreadyUsed);
   const [error,setError]=useState(null);
-  const [needKey,setNeedKey]=useState(false);
-  const [keyDraft,setKeyDraft]=useState('');
-  const [keySet,setKeySet]=useState(!!getApiKey());
   const endRef=useRef(null);
-  const MAX_TURNS=4;
 
   useEffect(()=>{if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
 
   const syncMsgs=(m)=>{ setMsgs(m); if(onUpdate) onUpdate(m); };
 
   const doStart=async()=>{
-    setStarted(true);setLoading(true);setError(null);setNeedKey(false);
+    setStarted(true);setLoading(true);setError(null);
     const prompt=buildPrompt();
     const initMsg={role:'user',content:prompt};
     syncMsgs([initMsg]);
     try{
-      const text=await callClaude(systemPrompt,[initMsg],700);
+      const text=await callClaude(systemPrompt,[initMsg],400);
       syncMsgs([initMsg,{role:'assistant',content:text}]);
     }catch(e){
-      if(e.message==='NO_KEY'){setNeedKey(true);setStarted(false);}
-      else setError('API error: '+e.message+'. Check your key and try again.');
+      setError('AI error: '+e.message);
+      setStarted(false);
     }
     setLoading(false);
   };
-
-  const submitKey=async()=>{
-    if(!keyDraft.trim())return;
-    setError(null);setLoading(true);
-    setApiKey(keyDraft.trim());
-    try{
-      await callClaude('Reply only with the word OK.',[{role:'user',content:'OK?'}],5);
-      setKeySet(true);setNeedKey(false);
-      doStart();
-    }catch(e){
-      setError('Key test failed: '+e.message);
-      setApiKey('');
-    }
-    setLoading(false);
-  };
-
-  const send=async()=>{
-    if(!input.trim()||loading)return;
-    const userMsg={role:'user',content:input};
-    const updated=[...msgs,userMsg];
-    syncMsgs(updated);setInput('');setLoading(true);setError(null);
-    try{
-      const text=await callClaude(systemPrompt,updated,600);
-      syncMsgs([...updated,{role:'assistant',content:text}]);
-    }catch(e){setError('Error: '+e.message);}
-    setLoading(false);
-  };
-
-  const userTurns=msgs.filter(m=>m.role==='user').length-1;
-  const canSend=started&&userTurns<MAX_TURNS&&!loading;
 
   const renderMsg=text=>{
     const lines=text.split('\n');
@@ -413,6 +380,8 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
     });
   };
 
+  const done=started&&!loading&&msgs.filter(m=>m.role==='assistant').length>0;
+
   return(
     <div className="ai-panel">
       <div className="ai-panel-hd" onClick={()=>setOpen(o=>!o)}>
@@ -423,30 +392,27 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
             </svg>
           </div>
           <div>
-            <div className="ai-panel-ttl">AI Strategy Review</div>
+            <div className="ai-panel-ttl">AI Strategy Review {done&&<span style={{fontSize:'0.7rem',fontWeight:400,opacity:0.55,marginLeft:6}}>✓ used</span>}</div>
             <div className="ai-panel-sub">{stageLabel} — probing questions, industry cases & gap analysis</div>
           </div>
         </div>
         <span className={`ai-chevron ${open?'open':''}`}>▼</span>
       </div>
       {open&&<div className="ai-body">
-        {!started&&!needKey&&<button className="ai-trigger-btn" onClick={doStart} disabled={loading}>
-          <span>✦</span> Get AI Feedback on This Stage
-        </button>}
-        {needKey&&<div className="ai-key-setup">
-          <p>Enter your <strong>Anthropic API key</strong> to enable AI coaching. The key is tested immediately, then used for this session only — never stored.</p>
-          <div className="ai-key-row">
-            <input className="ai-key-input" type="password" value={keyDraft} onChange={e=>setKeyDraft(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submitKey()} placeholder="sk-ant-api03-…" disabled={loading}/>
-            <button className="ai-key-btn" onClick={submitKey} disabled={loading||!keyDraft.trim()}>{loading?'Testing…':'Connect & Test →'}</button>
+        {!started&&<>
+          <div style={{background:'rgba(74,171,232,0.1)',border:'1px solid rgba(74,171,232,0.3)',borderRadius:'var(--r)',padding:'0.75rem 1rem',marginBottom:'1rem',fontSize:'0.8rem',color:'rgba(255,255,255,0.7)',lineHeight:1.55}}>
+            <strong style={{color:'var(--gold)'}}>⚠ One interaction per step.</strong> Your group has a single AI feedback request for this stage. Make sure your analysis is as complete as possible before requesting feedback — you cannot repeat it.
           </div>
-          <div className="ai-key-note">Get your key at console.anthropic.com — keys start with sk-ant-</div>
-        </div>}
+          <button className="ai-trigger-btn" onClick={doStart} disabled={loading}>
+            <span>✦</span> Get AI Feedback on This Stage
+          </button>
+        </>}
         {started&&<div className="chat-messages">
           {msgs.filter(m=>m.role==='assistant').length===0&&loading&&(
             <div className="chat-msg"><div className="mini-av ai">AI</div><div className="chat-bubble ai"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>
           )}
           {msgs.map((m,i)=>{
-            if(i===0)return null; // skip the user prompt
+            if(i===0)return null;
             return(
               <div key={i} className={`chat-msg ${m.role==='user'?'user':''}`}>
                 <div className={`mini-av ${m.role==='assistant'?'ai':'usr'}`}>{m.role==='assistant'?'AI':'You'}</div>
@@ -456,19 +422,12 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate}){
               </div>
             );
           })}
-          {msgs.length>1&&loading&&(
-            <div className="chat-msg"><div className="mini-av ai">AI</div><div className="chat-bubble ai"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>
-          )}
           <div ref={endRef}/>
         </div>}
-        {error&&<div style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{error}</div>}
-        {started&&<>
-          <div className="chat-input-row">
-            <input className="chat-input" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} placeholder={canSend?"Respond or ask a follow-up…":"Maximum exchanges reached"} disabled={!canSend}/>
-            <button className="chat-send" onClick={send} disabled={!canSend||!input.trim()}>Send</button>
-          </div>
-          {userTurns>=MAX_TURNS&&<div className="ai-limit">Maximum exchanges reached for this stage. Continue to the next step.</div>}
-        </>}
+        {done&&<div style={{marginTop:'0.75rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.35)',borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'0.6rem'}}>
+          AI feedback for this stage is complete. Refine your analysis above, then continue to the next step.
+        </div>}
+        {error&&<div style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--gold)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
       </div>}
     </div>
   );
@@ -533,7 +492,7 @@ Then produce your own independent expert three-stage analysis as instructed. Be 
           headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
           body:JSON.stringify({
             model:'claude-sonnet-4-6',
-            max_tokens:1500,
+            max_tokens:1400,
             system:sysPrompt,
             tools:[{"type":"web_search_20250305","name":"web_search"}],
             messages:[{role:'user',content:prompt}]
@@ -668,7 +627,7 @@ function CFOReport({st, onClose, onHtmlReady}){
 
     const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
-    callClaude(system,[{role:'user',content:prompt}],3000,'claude-sonnet-4-6')
+    callClaude(system,[{role:'user',content:prompt}],2400,'claude-sonnet-4-6')
       .then(text=>{setHtml(text);setGenState('done');if(onHtmlReady)onHtmlReady(text);})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
@@ -873,7 +832,7 @@ You are a sustainability strategy professor facilitating an executive education 
       })}
       <p style={{fontSize:'0.77rem',color:'#999',marginTop:'0.5rem'}}>Activate at least one stakeholder category. Each active category appears as a value line in Q3.</p>
     </div>
-    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} />
+    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} initialMsgs={st.chats?.q1}/>
   </div>;
 }
 
@@ -924,7 +883,7 @@ Challenge their lever choice and strategic thinking. Is this the right lever? Is
         <textarea value={st.ldetail} onChange={e=>upd('ldetail',e.target.value)} placeholder="Describe concrete actions, business model changes, or investments required. Link back to the opportunities in Q1. Why is this lever the best fit for your competitive position?" style={{minHeight:120}}/>
       </div>
     </div>
-    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} />
+    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} initialMsgs={st.chats?.q2}/>
   </div>;
 }
 
@@ -1043,7 +1002,7 @@ Challenge this financial model. What assumptions are most fragile? What is the s
       <div className="fld" style={{marginBottom:0}}><textarea value={st.pitch} onChange={e=>upd('pitch',e.target.value)} placeholder="Explain the assumptions. For each stakeholder benefit: what drives it, how confident are you, what market share or regulation assumption underpins it? What must happen for the project to reach positive NPV?" style={{minHeight:130}}/></div>
     </div>
 
-    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} />
+    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} initialMsgs={st.chats?.q3}/>
   </div>;
 }
 
