@@ -459,7 +459,7 @@ Search for current information about regulatory trends, leading company response
         resp=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1400,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
         });
         data=await resp.json();
         if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
@@ -563,7 +563,7 @@ function CFOReport({st, initialHtml, onHtmlChange}){
 
     const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo: (1) Executive summary highlight-box with recommendation and NPV headline. (2) Why this challenge is strategically material now — weave in any refined framing from the coaching dialogue. (3) Stakeholder landscape incorporating any gaps or challenges surfaced during coaching. (4) Strategic recommendation with competitive logic. (5) Financial case — NPV+ waterfall narrative, key assumptions stress-tested through coaching dialogue. (6) Key risks and mitigants, including any specifically raised during the coaching. (7) Next steps with suggested owners.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
-    callClaude(system,[{role:'user',content:prompt}],2400,'claude-sonnet-4-6')
+    callClaude(system,[{role:'user',content:prompt}],3500,'claude-sonnet-4-6')
       .then(text=>{setHtml(text);setGenState('done');if(onHtmlChange)onHtmlChange(text);})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
