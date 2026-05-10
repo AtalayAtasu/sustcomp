@@ -613,7 +613,7 @@ tr:nth-child(even) td{background:#F8FAFC}
         ${benRows}
       </tbody>
     </table>
-    ${d.pitch ? `<div style="margin-top:1rem;padding:0.9rem 1.1rem;background:#EEF6FB;border-left:4px solid #C9A84C;border-radius:0 6px 6px 0"><div style="font-size:7.5pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8B6914;margin-bottom:0.4rem">CFO Pitch</div><div style="font-size:10pt;line-height:1.65">${esc(d.pitch)}</div></div>` : ''}
+    <div style="margin-top:1rem;padding:0.9rem 1.1rem;background:#EEF6FB;border-left:4px solid #C9A84C;border-radius:0 6px 6px 0"><div style="font-size:7.5pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8B6914;margin-bottom:0.4rem">CFO Pitch</div><div style="font-size:10pt;line-height:1.65">${esc(d.pitch) || '<em style="color:#aaa">—</em>'}</div></div>
   </div>
 
   ${d.consultantHtml ? `
