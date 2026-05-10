@@ -511,7 +511,10 @@ Search for current information about regulatory trends, leading company response
           </div>
         </div>
         {state==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={generate}>✦ Get Consultant Opinion</button>}
-        {state==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10}}>✓ Analysis complete</span>}
+        {state==='done'&&<div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+          <span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10}}>✓ Analysis complete</span>
+          <button className="btn btn-s" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setState('idle');setReport('');if(onReportChange)onReportChange('');}}>↺ Regenerate</button>
+        </div>}
       </div>
 
       {state==='idle'&&<div style={{padding:'1.25rem 1.75rem',color:'#666',fontSize:'0.85rem',lineHeight:1.6}}>
@@ -626,6 +629,7 @@ ${html}
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
           {genState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={runGenerate}>✦ Generate CFO Report</button>}
           {genState==='done'&&<button className="btn btn-p no-print" style={{fontSize:'0.82rem'}} onClick={openPrint}>Print / Export PDF</button>}
+          {genState==='done'&&<button className="btn btn-s no-print" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setGenState('idle');setHtml('');if(onHtmlChange)onHtmlChange('');}}>↺ Regenerate</button>}
           {genState==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10,alignSelf:'center'}}>✓ Generated</span>}
         </div>
       </div>
