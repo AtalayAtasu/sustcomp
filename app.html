@@ -403,7 +403,9 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
       {done&&<div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',lineHeight:1.75,fontSize:'0.88rem',color:'var(--navy)'}}>
         {renderMsg(msgs.find(m=>m.role==='assistant')?.content||'')}
       </div>}
-      {done&&<div style={{marginTop:'0.5rem',fontSize:'0.72rem',color:'#bbb'}}>Refine your analysis above based on this feedback, then continue to the next step.</div>}
+      {done&&<div style={{marginTop:'0.875rem',background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.75rem 1rem',fontSize:'0.82rem',color:'#5A4000',lineHeight:1.6}}>
+        <strong>↑ Revise your analysis above</strong> based on this feedback — edit the text fields at the top of the page, then continue to the next step. The AI Consultant and CFO Report on the final page will automatically use your latest answers.
+      </div>}
       {error&&<div style={{color:'#c33',fontSize:'0.8rem',marginTop:'0.5rem'}}>{error} <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
     </div>
   );
@@ -1031,6 +1033,10 @@ function S4({st,set}){
         </table>
         {pitch&&<div style={{marginTop:'1.25rem'}}><div style={{fontSize:'0.68rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--gold-d)',marginBottom:'0.6rem'}}>CFO Pitch</div><div style={{fontSize:'0.86rem',lineHeight:1.65}}>{pitch}</div></div>}
       </div>
+    </div>
+
+    <div style={{background:'var(--blue-l)',border:'1px solid var(--border)',borderLeft:'4px solid var(--blue)',borderRadius:'var(--r)',padding:'0.75rem 1.1rem',marginBottom:'1.5rem',fontSize:'0.82rem',color:'#334',lineHeight:1.6}}>
+      <strong>How these reports are generated:</strong> The AI Consultant and CFO Report below draw on everything you entered across all four stages — including any revisions you made after reading the AI feedback on each step. If you want to refine your inputs further, use the Back button, update your answers, then return here to generate fresh reports.
     </div>
 
     <AIConsultant st={st} initialReport={st.consultantReport||''} onReportChange={r=>set(s=>({...s,consultantReport:r}))}/>
