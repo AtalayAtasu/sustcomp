@@ -194,6 +194,22 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
 .loading-report p{color:var(--navy);font-size:0.9rem}
 .loading-report .sub{color:#888;font-size:0.8rem;margin-top:0.25rem}
 
+/* AI THINKING LOADER */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6}100%{transform:scale(2.2);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes fade-msg{0%{opacity:0;transform:translateY(6px)}20%,80%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-6px)}}
+@keyframes bar-fill{0%{width:5%}100%{width:92%}}
+.ai-thinking{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1.5rem;gap:1.25rem}
+.ai-thinking-icon{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.ai-thinking-icon .ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:pulse-ring 1.8s ease-out infinite}
+.ai-thinking-icon .ring2{animation-delay:0.6s}
+.ai-thinking-icon .ring3{animation-delay:1.2s}
+.ai-thinking-icon .core{width:44px;height:44px;background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:float 2.4s ease-in-out infinite;box-shadow:0 4px 20px rgba(74,171,232,0.35)}
+.ai-thinking-msg{font-size:0.85rem;color:var(--navy);font-weight:500;min-height:1.4rem;animation:fade-msg 2.8s ease-in-out infinite;text-align:center}
+.ai-thinking-bar{width:180px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.ai-thinking-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:2px;animation:bar-fill 18s linear forwards}
+
 /* SUMMARY */
 .sum-sec{background:var(--cream);border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem}
 .sum-sec-hd{background:var(--navy);color:white;padding:1rem 1.75rem;display:flex;align-items:center;justify-content:space-between}
@@ -340,6 +356,30 @@ function Waterfall({sth,capex,rate,horizon,curr}){
   );
 }
 
+/* ─── AI THINKING LOADER ─── */
+function AIThinking({messages}){
+  const [idx,setIdx]=useState(0);
+  useEffect(()=>{
+    const t=setInterval(()=>setIdx(i=>(i+1)%messages.length),2800);
+    return()=>clearInterval(t);
+  },[messages.length]);
+  return(
+    <div className="ai-thinking">
+      <div className="ai-thinking-icon">
+        <div className="ring"/><div className="ring ring2"/><div className="ring ring3"/>
+        <div className="core">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26C17.81 13.47 19 11.38 19 9c0-3.87-3.13-7-7-7z" fill="rgba(255,255,255,0.9)"/>
+            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1z" fill="rgba(255,255,255,0.6)"/>
+          </svg>
+        </div>
+      </div>
+      <div className="ai-thinking-msg">{messages[idx]}</div>
+      <div className="ai-thinking-bar"><div className="ai-thinking-bar-fill" key={idx}/></div>
+    </div>
+  );
+}
+
 /* ─── AI CHAT PANEL ─── */
 function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
   // Restore from saved chat history if returning to this step
@@ -397,9 +437,7 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
         </div>
         <button className="btn btn-p" onClick={doStart} disabled={loading} style={{fontSize:'0.82rem'}}>✦ Get AI Feedback on This Stage</button>
       </>}
-      {started&&!done&&loading&&<div style={{display:'flex',alignItems:'center',gap:10,padding:'0.75rem 0',color:'#888',fontSize:'0.82rem'}}>
-        <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>Generating feedback…
-      </div>}
+      {started&&!done&&loading&&<AIThinking messages={['Analysing your inputs…','Identifying strategic gaps…','Searching for industry parallels…','Formulating observations…','Almost there…']}/>}
       {done&&<div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',lineHeight:1.75,fontSize:'0.88rem',color:'var(--navy)'}}>
         {renderMsg(msgs.find(m=>m.role==='assistant')?.content||'')}
       </div>}
@@ -523,9 +561,7 @@ Search for current information about regulatory trends, leading company response
           <strong>⚠ Before you generate:</strong> make sure your stakeholder analysis, strategic lever, and NPV+ inputs across steps 1–3 are as complete as possible. You have one opportunity to regenerate this report — save it for genuine revisions, not first attempts.
         </div>
       </div>}
-      {state==='loading'&&<div style={{padding:'1.5rem 1.75rem',display:'flex',alignItems:'center',gap:12,color:'#888',fontSize:'0.85rem'}}>
-        <div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div>Researching industry context and producing expert analysis…
-      </div>}
+      {state==='loading'&&<AIThinking messages={['Searching industry databases…','Researching regulatory landscape…','Finding comparable company cases…','Analysing stakeholder dynamics…','Synthesising expert opinion…','Structuring the three-stage analysis…','Almost there…']}/>}
       {state==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
 
       {state==='done'&&<div style={{padding:'1.25rem 1.75rem'}}>
@@ -642,9 +678,7 @@ ${html}
           <strong>⚠ Before you generate:</strong> confirm all your inputs across steps 1–3 are finalised and that you have reviewed the AI Consultant opinion above. You have one opportunity to regenerate this report — treat it as a last resort after substantive revisions, not a first draft.
         </div>
       </div>}
-      {genState==='loading'&&<div style={{padding:'2rem 1.75rem',display:'flex',alignItems:'center',gap:14,color:'#888',fontSize:'0.85rem'}}>
-        <div className="spin" style={{width:22,height:22,borderWidth:3}}/> Generating executive report — synthesising your analysis and AI coaching insights…
-      </div>}
+      {genState==='loading'&&<AIThinking messages={['Reading your stakeholder analysis…','Reviewing strategic lever selection…','Modelling the financial scenarios…','Incorporating AI coaching insights…','Structuring the executive memo…','Stress-testing key assumptions…','Drafting risks and mitigants…','Writing next steps…','Finalising the report…']}/>}
       {genState==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Generation failed: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={runGenerate}>Retry</button></div>}
       {genState==='done'&&<div className="report-body" style={{borderTop:'1px solid var(--border)'}} dangerouslySetInnerHTML={{__html:html}}/>}
     </div>
