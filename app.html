@@ -256,7 +256,7 @@ const LEVERS=[
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -381,10 +381,9 @@ function AIThinking({messages}){
 }
 
 /* ─── AI CHAT PANEL ─── */
-function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
+function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs, regenUsed, onRegenUsed}){
   // Restore from saved chat history if returning to this step
   const alreadyUsed=(initialMsgs||[]).length>1;
-  const [open,setOpen]=useState(alreadyUsed);
   const [msgs,setMsgs]=useState(alreadyUsed?initialMsgs:[]);
   const [loading,setLoading]=useState(false);
   const [started,setStarted]=useState(alreadyUsed);
@@ -401,13 +400,19 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
     const initMsg={role:'user',content:prompt};
     syncMsgs([initMsg]);
     try{
-      const text=await callClaude(systemPrompt,[initMsg],800);
+      const text=await callClaude(systemPrompt,[initMsg],1600);
       syncMsgs([initMsg,{role:'assistant',content:text}]);
     }catch(e){
       setError('AI error: '+e.message);
       setStarted(false);
     }
     setLoading(false);
+  };
+
+  const doRegen=()=>{
+    setStarted(false);
+    syncMsgs([]);
+    if(onRegenUsed) onRegenUsed();
   };
 
   const renderMsg=text=>{
@@ -429,11 +434,11 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
           <span style={{fontSize:'0.65rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--blue)'}}>AI Strategy Review</span>
           <span style={{fontSize:'0.72rem',color:'#999',marginLeft:8}}>{stageLabel}</span>
         </div>
-        {done&&<span style={{fontSize:'0.65rem',background:'#E8F5E9',color:'#2E7D32',padding:'2px 8px',borderRadius:10,fontWeight:500}}>✓ Feedback received</span>}
+        {done&&<span style={{fontSize:'0.65rem',background:'#E8F5E9',color:'#2E7D32',padding:'2px 8px',borderRadius:10,fontWeight:500}}>{regenUsed?'✓ Final feedback':'✓ Feedback received'}</span>}
       </div>
       {!started&&<>
         <div style={{fontSize:'0.8rem',color:'var(--navy)',lineHeight:1.6,marginBottom:'0.875rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'0.7rem 0.9rem'}}>
-          <strong>⚠ One interaction per step.</strong> Make sure your analysis is as complete as possible before requesting feedback — this option cannot be repeated.
+          <strong>⚠ Before you request:</strong> make sure your analysis is as complete as possible. {regenUsed?<span style={{color:'#c33',fontWeight:600}}>This is your final feedback — no further regenerations available.</span>:<span>You can refresh this feedback once after receiving it — save that option for genuine revisions, not first attempts.</span>}
         </div>
         <button className="btn btn-p" onClick={doStart} disabled={loading} style={{fontSize:'0.82rem'}}>✦ Get AI Feedback on This Stage</button>
       </>}
@@ -443,6 +448,7 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs}){
       </div>}
       {done&&<div style={{marginTop:'0.875rem',background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.75rem 1rem',fontSize:'0.82rem',color:'#5A4000',lineHeight:1.6}}>
         <strong>↑ Revise your analysis above</strong> based on this feedback — edit the text fields at the top of the page, then continue to the next step. The AI Consultant and CFO Report on the final page will automatically use your latest answers.
+        {!regenUsed&&<div style={{marginTop:'0.5rem'}}>Made substantial revisions? <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.82rem',textDecoration:'underline',padding:0}} onClick={doRegen}>↺ Request fresh feedback (1 remaining)</button></div>}
       </div>}
       {error&&<div style={{color:'#c33',fontSize:'0.8rem',marginTop:'0.5rem'}}>{error} <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
     </div>
@@ -536,7 +542,7 @@ Use web search to find current market context. Then write the four-section Strat
         resp=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2600,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:5200,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
         });
         data=await resp.json();
         if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
@@ -632,7 +638,7 @@ CRITICAL OUTPUT DISCIPLINE: You have a hard token budget. All seven sections mus
 (7) Next steps: 3 bullet points with suggested owners.
 Complete all seven sections. Do not elaborate beyond the limits above.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
-    callClaude(system,[{role:'user',content:prompt}],3000,'claude-sonnet-4-6')
+    callClaude(system,[{role:'user',content:prompt}],6000,'claude-sonnet-4-6')
       .then(text=>{setHtml(text);setGenState('done');if(onHtmlChange)onHtmlChange(text);})
       .catch(e=>{setError(e.message);setGenState('error');});
   };
@@ -832,7 +838,7 @@ You are a sustainability strategy professor facilitating an executive education 
       })}
       <p style={{fontSize:'0.77rem',color:'#999',marginTop:'0.5rem'}}>Activate at least one stakeholder category. Each active category appears as a value line in Q3.</p>
     </div>
-    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} initialMsgs={st.chats?.q1}/>
+    <AIChat stageLabel="Stakeholder Analysis" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q1:m}}))} initialMsgs={st.chats?.q1} regenUsed={!!st.chatRegenUsed?.q1} onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),q1:true}}))}/>
   </div>;
 }
 
@@ -883,7 +889,7 @@ Challenge their lever choice and strategic thinking. Is this the right lever? Is
         <textarea value={st.ldetail} onChange={e=>upd('ldetail',e.target.value)} placeholder="Describe concrete actions, business model changes, or investments required. Link back to the opportunities in Q1. Why is this lever the best fit for your competitive position?" style={{minHeight:120}}/>
       </div>
     </div>
-    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} initialMsgs={st.chats?.q2}/>
+    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} initialMsgs={st.chats?.q2} regenUsed={!!st.chatRegenUsed?.q2} onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),q2:true}}))}/>
   </div>;
 }
 
@@ -1002,7 +1008,7 @@ Challenge this financial model. What assumptions are most fragile? What is the s
       <div className="fld" style={{marginBottom:0}}><textarea value={st.pitch} onChange={e=>upd('pitch',e.target.value)} placeholder="Explain the assumptions. For each stakeholder benefit: what drives it, how confident are you, what market share or regulation assumption underpins it? What must happen for the project to reach positive NPV?" style={{minHeight:130}}/></div>
     </div>
 
-    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} initialMsgs={st.chats?.q3}/>
+    <AIChat stageLabel="NPV+ Valuation" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q3:m}}))} initialMsgs={st.chats?.q3} regenUsed={!!st.chatRegenUsed?.q3} onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),q3:true}}))}/>
   </div>;
 }
 
