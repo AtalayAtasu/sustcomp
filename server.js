@@ -62,8 +62,16 @@ async function initDB() {
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS pitch          TEXT DEFAULT ''`);
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS capex          NUMERIC DEFAULT 0`);
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS consultant_html TEXT DEFAULT ''`);
+  await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS version        TEXT DEFAULT 'basic'`);
+  await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS extended_data  JSONB DEFAULT NULL`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS drafts (
+      user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state      JSONB,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS drafts_ext (
       user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       state      JSONB,
       updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -203,7 +211,7 @@ app.get('/admin', requireAdmin, async (req, res) => {
         LEFT JOIN cohorts c ON u.cohort_id = c.id
         ORDER BY u.created_at DESC`),
       pool.query(`
-        SELECT id, username, cohort_name, group_name, challenge_name, submitted_at
+        SELECT id, username, cohort_name, group_name, challenge_name, submitted_at, version
         FROM submissions ORDER BY submitted_at DESC LIMIT 100`)
     ]);
     res.send(adminHTML(cohortsR.rows, usersR.rows, subsR.rows, req.query.msg));
@@ -307,6 +315,36 @@ app.get('/admin/submissions/:id/complete', requireAdmin, async (req, res) => {
   }));
 });
 
+// Submissions — view complete (extended version)
+app.get('/admin/submissions/:id/complete-ext', requireAdmin, async (req, res) => {
+  const r = await pool.query('SELECT * FROM submissions WHERE id = $1', [req.params.id]);
+  if (!r.rows[0]) return res.status(404).send('Not found');
+  const row = r.rows[0];
+  const d = row.extended_data || {};
+  res.type('html').send(buildCompleteDoc({
+    reportHtml:     row.report_html,
+    consultantHtml: row.consultant_html,
+    username:       row.username,
+    challengeName:  row.challenge_name,
+    challengeDesc:  row.challenge_desc,
+    groupName:      row.group_name,
+    members:        row.members,
+    industry:       row.industry,
+    cohortName:     row.cohort_name,
+    lever:          d.lever || '',
+    leverDetail:    d.vision || '',
+    marketSegment:  d.wtpData?.segment || d.mktExData?.segment || '',
+    stakeholders:   row.stakeholders,
+    benefitLines:   row.benefit_lines,
+    npv5:           row.npv5,
+    npv10:          row.npv10,
+    capex:          row.capex,
+    rate:           row.rate,
+    currency:       row.currency,
+    pitch:          row.pitch
+  }));
+});
+
 app.post('/admin/submissions/:id/delete', requireAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM submissions WHERE id=$1', [req.params.id]);
@@ -318,8 +356,8 @@ app.post('/admin/submissions/:id/delete', requireAdmin, async (req, res) => {
 
 // ── MAIN APP ───────────────────────────────────────────────────────────────
 
-app.get('/', requireLogin, (req, res) => {
-  const html = fs.readFileSync(path.join(__dirname, 'app.html'), 'utf8');
+function serveApp(file, req, res) {
+  const html = fs.readFileSync(path.join(__dirname, file), 'utf8');
   const script = `<script>
     window.__API_KEY__   = ${JSON.stringify(req.session.user.apiKey)};
     window.__USERNAME__  = ${JSON.stringify(req.session.user.username)};
@@ -327,7 +365,11 @@ app.get('/', requireLogin, (req, res) => {
     window.__EXPIRES__   = ${JSON.stringify(req.session.user.expiresAt)};
   </script>`;
   res.send(html.replace('</head>', script + '</head>'));
-});
+}
+
+app.get('/',        requireLogin, (req, res) => res.send(landingHTML(req.session.user.username)));
+app.get('/basic',   requireLogin, (req, res) => serveApp('app.html',          req, res));
+app.get('/extended',requireLogin, (req, res) => serveApp('app-extended.html', req, res));
 
 // ── SUBMIT API ─────────────────────────────────────────────────────────────
 
@@ -351,35 +393,70 @@ app.put('/api/draft', requireLogin, async (req, res) => {
   } catch (e) { res.json({ ok: false }); }
 });
 
+// Extended version — separate draft slot
+app.get('/api/draft/ext', requireLogin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT state FROM drafts_ext WHERE user_id=$1', [req.session.user.id]);
+    res.json(r.rows[0] ? { state: r.rows[0].state } : {});
+  } catch (e) { res.json({}); }
+});
+
+app.put('/api/draft/ext', requireLogin, async (req, res) => {
+  try {
+    await pool.query(
+      `INSERT INTO drafts_ext(user_id, state, updated_at) VALUES($1,$2,NOW())
+       ON CONFLICT(user_id) DO UPDATE SET state=$2, updated_at=NOW()`,
+      [req.session.user.id, JSON.stringify(req.body)]
+    );
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false }); }
+});
+
 // ── SUBMIT ─────────────────────────────────────────────────────────────────
 
 app.post('/api/submit', requireLogin, async (req, res) => {
   const u = req.session.user;
   const d = req.body;
   try {
-    await pool.query(`
-      INSERT INTO submissions
-        (user_id, username, cohort_name, group_name, members, industry,
-         challenge_name, challenge_desc, lever, lever_detail, market_segment,
-         stakeholders, benefit_lines, npv5, npv10, capex, rate, currency,
-         pitch, consultant_html, report_html)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
-      [u.id, u.username, u.cohortName,
-       d.groupName||'', d.members||'', d.industry||'',
-       d.challengeName||'', d.challengeDesc||'',
-       d.lever||'', d.leverDetail||'', d.marketSegment||'',
-       JSON.stringify(d.stakeholders||[]),
-       JSON.stringify(d.benefitLines||[]),
-       d.npv5||0, d.npv10||0, d.capex||0, d.rate||0,
-       d.currency||'EUR', d.pitch||'',
-       d.consultantHtml||'', d.reportHtml||'']);
-
-    // Delete draft now that work is submitted
-    await pool.query('DELETE FROM drafts WHERE user_id=$1', [u.id]);
+    if (d.version === 'extended') {
+      // Extended submission — store common fields + full payload in extended_data
+      await pool.query(`
+        INSERT INTO submissions
+          (user_id, username, cohort_name, group_name, members, industry,
+           challenge_name, challenge_desc, npv5, npv10, capex, rate, currency,
+           pitch, consultant_html, report_html, version, extended_data)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+        [u.id, u.username, u.cohortName,
+         d.groupName||'', d.members||'', d.industry||'',
+         d.challengeName||'', d.challengeDesc||'',
+         d.npv5||0, d.npv10||0, d.capex||0, d.rate||0,
+         d.currency||'EUR', d.pitch||'',
+         d.consultantHtml||'', d.reportHtml||'',
+         'extended', JSON.stringify(d)]);
+      await pool.query('DELETE FROM drafts_ext WHERE user_id=$1', [u.id]);
+    } else {
+      // Basic submission
+      await pool.query(`
+        INSERT INTO submissions
+          (user_id, username, cohort_name, group_name, members, industry,
+           challenge_name, challenge_desc, lever, lever_detail, market_segment,
+           stakeholders, benefit_lines, npv5, npv10, capex, rate, currency,
+           pitch, consultant_html, report_html, version)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+        [u.id, u.username, u.cohortName,
+         d.groupName||'', d.members||'', d.industry||'',
+         d.challengeName||'', d.challengeDesc||'',
+         d.lever||'', d.leverDetail||'', d.marketSegment||'',
+         JSON.stringify(d.stakeholders||[]),
+         JSON.stringify(d.benefitLines||[]),
+         d.npv5||0, d.npv10||0, d.capex||0, d.rate||0,
+         d.currency||'EUR', d.pitch||'',
+         d.consultantHtml||'', d.reportHtml||'', 'basic']);
+      await pool.query('DELETE FROM drafts WHERE user_id=$1', [u.id]);
+    }
 
     res.json({ success: true });
 
-    // Send email in background — don't let email failure block the submission
     sendEmail({ ...d, username: u.username, cohortName: u.cohortName })
       .then(() => console.log(`Email sent for ${u.username}`))
       .catch(e => console.error('Email failed for', u.username, ':', e.message));
@@ -889,21 +966,30 @@ function adminHTML(cohorts, users, submissions, msg) {
       </td>
     </tr>`).join('') || `<tr><td colspan="6" class="empty">No users yet</td></tr>`;
 
-  const subRows = submissions.map(s => `
+  const subRows = submissions.map(s => {
+    const isExt = s.version === 'extended';
+    const vBadge = isExt
+      ? `<span style="background:#7C3AED;color:white;border-radius:10px;font-size:0.65rem;padding:1px 7px;font-weight:600;margin-left:5px">Extended</span>`
+      : `<span style="background:#0070CC;color:white;border-radius:10px;font-size:0.65rem;padding:1px 7px;font-weight:600;margin-left:5px">Basic</span>`;
+    const completeLink = isExt
+      ? `<a href="/admin/submissions/${s.id}/complete-ext" target="_blank" class="view-link" style="background:#F3E8FF;color:#7C3AED;border:1px solid #C4B5FD;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">Complete →</a>`
+      : `<a href="/admin/submissions/${s.id}/complete" target="_blank" class="view-link" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">Complete →</a>`;
+    return `
     <tr>
-      <td><strong>${s.username}</strong></td>
+      <td><strong>${s.username}</strong>${vBadge}</td>
       <td>${s.cohort_name || '—'}</td>
       <td>${s.group_name || '—'}</td>
       <td>${s.challenge_name || '—'}</td>
       <td>${fmtDt(s.submitted_at)}</td>
       <td style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
-        <a href="/admin/submissions/${s.id}/report" target="_blank" class="view-link">CFO Report →</a>
-        <a href="/admin/submissions/${s.id}/complete" target="_blank" class="view-link" style="background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7">Complete →</a>
+        <a href="/admin/submissions/${s.id}/report" target="_blank" class="view-link" style="background:#EBF5FF;color:#004080;border:1px solid #BAD4F0;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">CFO Report →</a>
+        ${completeLink}
         <form method="POST" action="/admin/submissions/${s.id}/delete" style="margin:0" onsubmit="return confirm('Delete this submission? This cannot be undone.')">
           <button type="submit" style="background:none;border:1px solid #e88;color:#c33;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;font-family:inherit">Delete</button>
         </form>
       </td>
-    </tr>`).join('') || `<tr><td colspan="6" class="empty">No submissions yet</td></tr>`;
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" class="empty">No submissions yet</td></tr>`;
 
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -1031,6 +1117,81 @@ function adminHTML(cohorts, users, submissions, msg) {
   </div>
 
 </div></body></html>`;
+}
+
+// ── LANDING PAGE ───────────────────────────────────────────────────────────
+
+function landingHTML(username) {
+  return `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sustainability Strategy Compass</title>${FONTS}
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF2FA;min-height:100vh;display:flex;flex-direction:column}
+.hdr{background:#004080;padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.hdr-title{font-family:'Playfair Display',Georgia,serif;font-size:1rem;color:white;font-weight:700}
+.hdr-right{font-size:0.78rem;color:rgba(255,255,255,0.5)}
+.hdr-right a{color:rgba(255,255,255,0.5);text-decoration:none} .hdr-right a:hover{color:white}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem}
+.eyebrow{font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#0070CC;margin-bottom:0.5rem}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:1.75rem;font-weight:700;color:#002A5C;text-align:center;margin-bottom:0.4rem}
+.sub{font-size:0.9rem;color:#888;margin-bottom:2.5rem;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:700px;width:100%}
+.card{background:white;border-radius:14px;padding:2rem 1.75rem;border:2px solid #E0EAF4;text-decoration:none;color:inherit;transition:all 0.18s;display:flex;flex-direction:column;gap:0.75rem}
+.card:hover{border-color:#004080;box-shadow:0 8px 32px rgba(0,64,128,0.12);transform:translateY(-2px)}
+.card-tag{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;align-self:flex-start}
+.tag-basic{background:#DBEAFE;color:#1565C0}
+.tag-ext{background:#EDE9FE;color:#6D28D9}
+.card-title{font-family:'Playfair Display',Georgia,serif;font-size:1.15rem;font-weight:700;color:#002A5C}
+.card-desc{font-size:0.85rem;color:#666;line-height:1.6}
+.card-steps{margin-top:0.25rem}
+.card-step{font-size:0.78rem;color:#888;padding:0.18rem 0;display:flex;align-items:center;gap:0.4rem}
+.card-step::before{content:'›';color:#0070CC;font-weight:600}
+.card-arrow{margin-top:0.75rem;font-size:0.82rem;font-weight:600;color:#004080;align-self:flex-end}
+.card.ext{border-color:#E9D5FF} .card.ext:hover{border-color:#7C3AED;box-shadow:0 8px 32px rgba(124,58,237,0.12)}
+.card.ext .card-arrow{color:#6D28D9}
+</style></head><body>
+<div class="hdr">
+  <div class="hdr-brand">
+    <svg width="32" height="32" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="white" stroke-width="2"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="white" stroke-width="1.3"/><ellipse cx="22" cy="22" rx="10.5" ry="19.5" stroke="white" stroke-width="1.3"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="white" stroke-width="1.3"/><line x1="22" y1="2.5" x2="22" y2="41.5" stroke="white" stroke-width="1.3"/></svg>
+    <div class="hdr-title">Sustainability Strategy Compass</div>
+  </div>
+  <div class="hdr-right">Welcome, ${username} &nbsp;·&nbsp; <a href="/logout">Sign out</a></div>
+</div>
+<div class="main">
+  <div class="eyebrow">AcpitConsulting · Executive Education</div>
+  <h1>Choose your programme version</h1>
+  <p class="sub">Select the version assigned by your instructor.</p>
+  <div class="cards">
+    <a class="card" href="/basic">
+      <span class="card-tag tag-basic">Standard</span>
+      <div class="card-title">Sustainability Strategy Compass</div>
+      <div class="card-desc">A focused four-stage analysis from stakeholder mapping through NPV+ valuation to AI-generated executive reports.</div>
+      <div class="card-steps">
+        <div class="card-step">Q1 · Stakeholder analysis</div>
+        <div class="card-step">Q2 · Strategic lever selection</div>
+        <div class="card-step">Q3 · NPV+ financial model</div>
+        <div class="card-step">AI Strategic Advisor &amp; CFO Report</div>
+      </div>
+      <div class="card-arrow">Start Standard →</div>
+    </a>
+    <a class="card ext" href="/extended">
+      <span class="card-tag tag-ext">Extended</span>
+      <div class="card-title">Deep Strategy Analysis</div>
+      <div class="card-desc">An extended deep-dive adding market context, industry sustainability track record, and a detailed triple-win strategic opportunity analysis.</div>
+      <div class="card-steps">
+        <div class="card-step">Market context &amp; industry track record</div>
+        <div class="card-step">Q1 · Stakeholder analysis</div>
+        <div class="card-step">Q2 · Triple-win strategic opportunity</div>
+        <div class="card-step">Q3 · NPV+ financial model</div>
+        <div class="card-step">AI Strategic Advisor &amp; CFO Report</div>
+      </div>
+      <div class="card-arrow">Start Extended →</div>
+    </a>
+  </div>
+</div>
+</body></html>`;
 }
 
 // ── START ──────────────────────────────────────────────────────────────────
