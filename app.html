@@ -238,7 +238,13 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<script>
+// Newer @babel/standalone defaults to the automatic JSX runtime which emits ES module
+// import statements — incompatible with plain <script> tags. Force classic runtime so
+// Babel emits React.createElement() calls instead.
+Babel.registerPreset('react-classic',{presets:[[Babel.availablePresets['react'],{runtime:'classic'}]]});
+</script>
+<script type="text/babel" data-presets="react-classic">
 const {useState, useRef, useEffect} = React;
 
 /* ─── CONSTANTS ─── */
