@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sustainability Strategy Compass — Extended</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF2FA;color:#1A1A1A;min-height:100vh}
+:root{
+  --navy:#004080; --navy-d:#002A5C; --navy-l:#0062B8;
+  --blue:#0070CC; --blue-m:#1A8AD4; --blue-l:#E3EFF9;
+  --gold:#4AABE8; --gold-l:#DCF0FA; --gold-d:#2B7DB0;
+  --cream:#ffffff; --cream-d:#E6EFF9; --cream-dd:#D5E6F5;
+  --border:rgba(0,0,0,0.09); --border-m:rgba(0,64,128,0.18);
+  --r:10px; --r-lg:16px;
+  --soc:#2D6A4F; --soc-l:#D8F3DC;
+  --eco:#B45309; --eco-l:#FEF3C7;
+  --reg:#1565C0; --reg-l:#DBEAFE;
+  --inv:#6B21A8; --inv-l:#EDE9FE;
+  --neg:#C0392B; --pos:#004080;
+}
+h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;font-weight:600}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.hdr{background:var(--navy);color:white;padding:0 2.5rem;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--gold)}
+.hdr-brand{display:flex;align-items:center;gap:16px}
+.hdr-title{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:600;color:rgba(255,255,255,0.9)}
+.hdr-sub{font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:1px}
+.hdr-grp{font-size:0.78rem;color:rgba(255,255,255,0.5)}
+.body{display:flex;flex:1}
+.sb{width:220px;background:var(--navy-d);color:white;padding:1.75rem 0;flex-shrink:0;position:sticky;top:66px;height:calc(100vh - 66px);overflow-y:auto}
+.sb-lbl{font-size:0.6rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);padding:0.85rem 1.5rem 0.35rem}
+.sb-item{display:flex;align-items:center;gap:9px;padding:0.52rem 1.4rem;cursor:pointer;font-size:0.8rem;color:rgba(255,255,255,0.45);border-left:3px solid transparent;transition:all 0.15s}
+.sb-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+.sb-item.active{background:rgba(255,255,255,0.1);color:white;border-left-color:var(--gold)}
+.sb-item.done{color:rgba(255,255,255,0.6)}
+.sb-dot{width:17px;height:17px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}
+.sb-item.active .sb-dot{border-color:var(--gold);background:var(--gold);color:var(--navy);font-weight:700}
+.sb-item.done .sb-dot{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);color:white}
+.sb-div{height:1px;background:rgba(255,255,255,0.06);margin:0.5rem 1.4rem}
+.main{flex:1;padding:2.5rem 3rem;max-width:900px;margin:0 auto;width:100%}
+.card{background:var(--cream);border-radius:var(--r-lg);padding:2.25rem;border:1px solid var(--border);margin-bottom:1.5rem;position:relative;overflow:hidden}
+.ey{font-size:0.67rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold-d);margin-bottom:0.5rem}
+.ctitle{font-size:1.6rem;color:var(--navy);margin-bottom:0.45rem;line-height:1.25}
+.csub{font-size:0.875rem;color:#5C5C5C;line-height:1.65;max-width:640px}
+.divl{height:1px;background:var(--border);margin:1.75rem 0}
+.fld{margin-bottom:1.35rem}
+.fld label{display:block;font-size:0.79rem;font-weight:500;color:#1A1A1A;margin-bottom:0.38rem}
+.fld-hint{font-size:0.74rem;color:#909090;margin-top:0.28rem;line-height:1.5}
+input[type=text],input[type=number],select,textarea{width:100%;padding:0.56rem 0.8rem;border:1px solid var(--border-m);border-radius:var(--r);font-family:inherit;font-size:0.875rem;color:#1A1A1A;background:white;transition:border 0.15s,box-shadow 0.15s;outline:none}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--blue-m);box-shadow:0 0 0 3px rgba(0,84,166,0.1)}
+textarea{resize:vertical;line-height:1.6;min-height:88px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23909090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0.8rem center}
+input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.sc{border-radius:var(--r-lg);overflow:hidden;border:1.5px solid var(--border-m);margin-bottom:0.875rem}
+.sc-hd{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;cursor:pointer;user-select:none}
+.sc-hl{display:flex;align-items:center;gap:10px}
+.sc-ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.sc-nm{font-size:0.88rem;font-weight:500}
+.sc-ds{font-size:0.74rem;color:#7a7a7a;margin-top:1px}
+.tgl{width:40px;height:22px;border-radius:11px;background:#D1D5DB;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.tgl-k{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.sc-body{padding:0 1.25rem 1.25rem;background:white}
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem}
+.lc{border:1.5px solid var(--border-m);border-radius:var(--r);padding:0.875rem 1rem;cursor:pointer;transition:all 0.15s;background:white;text-align:left}
+.lc:hover,.lc.sel{border-color:var(--blue-m);background:var(--blue-l)}
+.lc.sel{box-shadow:0 0 0 3px rgba(0,84,166,0.1)}
+.lt{display:inline-block;font-size:0.65rem;font-weight:500;padding:2px 7px;border-radius:20px;margin-bottom:0.38rem}
+.ltt{font-size:0.85rem;font-weight:500;color:var(--navy);margin-bottom:0.18rem}
+.ld{font-size:0.75rem;color:#666;line-height:1.5}
+.nl{background:white;border:1px solid var(--border);border-radius:var(--r);margin-bottom:0.75rem;overflow:hidden}
+.nl-hd{display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.1rem}
+.nl-left{display:flex;align-items:center;gap:10px}
+.nl-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0}
+.nl-nm{font-size:0.84rem;font-weight:500}
+.nl-sub{font-size:0.73rem;color:#888;margin-top:1px}
+.nl-val{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600}
+.nl-body{padding:0 1.1rem 1rem;border-top:1px solid var(--border)}
+.wf{background:var(--navy);border-radius:var(--r-lg);padding:1.5rem;margin:1.5rem 0;border:1px solid rgba(74,171,232,0.3)}
+.wf-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.wf-ttl{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.htabs{display:flex;background:rgba(255,255,255,0.1);border-radius:20px;padding:3px}
+.htab{font-size:0.76rem;padding:0.28rem 0.85rem;border-radius:16px;cursor:pointer;color:rgba(255,255,255,0.5);transition:all 0.15s;border:none;background:none;font-family:inherit}
+.htab.on{background:var(--gold);color:var(--navy);font-weight:500}
+.npv3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.875rem}
+.npv3b{background:rgba(255,255,255,0.08);border-radius:8px;padding:0.875rem 1rem;text-align:center}
+.npv3l{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:0.3rem}
+.npv3v{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;color:white}
+.npv3v.pos{color:#A8E6CF} .npv3v.neg{color:#FC9D9D} .npv3v.gld{color:var(--gold)}
+.ai-panel{background:linear-gradient(135deg,#001530 0%,#002A5C 100%);border-radius:var(--r-lg);border:1px solid rgba(74,171,232,0.25);margin-top:1.5rem;overflow:hidden}
+.report-body{padding:2rem 2.5rem;font-size:0.9rem;line-height:1.75;color:#1A1A1A}
+.report-body h3{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--navy);margin:1.5rem 0 0.5rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem}
+.report-body h3:first-child{margin-top:0}
+.report-body p{margin-bottom:0.875rem}
+.report-body ul,.report-body ol{padding-left:1.5rem;margin-bottom:0.875rem}
+.report-body li{margin-bottom:0.3rem}
+.report-body strong{color:var(--navy);font-weight:600}
+.report-body .highlight-box{background:var(--blue-l);border-left:3px solid var(--blue);padding:1rem 1.25rem;border-radius:0 var(--r) var(--r) 0;margin:1rem 0}
+.report-body table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.85rem}
+.report-body th{background:var(--navy);color:white;padding:0.5rem 0.75rem;text-align:left;font-weight:500;font-size:0.78rem}
+.report-body td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border)}
+.loading-report{padding:4rem;text-align:center}
+.loading-report .spin{width:40px;height:40px;border:3px solid var(--border-m);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6}100%{transform:scale(2.2);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes fade-msg{0%{opacity:0;transform:translateY(6px)}20%,80%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-6px)}}
+@keyframes bar-fill{0%{width:5%}100%{width:92%}}
+.ai-thinking{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1.5rem;gap:1.25rem}
+.ai-thinking-icon{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.ai-thinking-icon .ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:pulse-ring 1.8s ease-out infinite}
+.ai-thinking-icon .ring2{animation-delay:0.6s}
+.ai-thinking-icon .ring3{animation-delay:1.2s}
+.ai-thinking-icon .core{width:44px;height:44px;background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:float 2.4s ease-in-out infinite;box-shadow:0 4px 20px rgba(74,171,232,0.35)}
+.ai-thinking-msg{font-size:0.85rem;color:var(--navy);font-weight:500;min-height:1.4rem;animation:fade-msg 2.8s ease-in-out infinite;text-align:center}
+.ai-thinking-bar{width:180px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.ai-thinking-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:2px;animation:bar-fill 18s linear forwards}
+.sum-sec{background:var(--cream);border-radius:var(--r-lg);border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem}
+.sum-sec-hd{background:var(--navy);color:white;padding:1rem 1.75rem;display:flex;align-items:center;justify-content:space-between}
+.sum-sec-hd h3{color:white;font-size:1rem;margin-top:0.2rem}
+.sum-sec-ey{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.38)}
+.sum-sec-body{padding:1.25rem 1.75rem}
+.stbl{width:100%;font-size:0.83rem;border-collapse:collapse}
+.stbl th{text-align:left;padding:0.4rem 0.5rem;font-size:0.68rem;color:#999;font-weight:500;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.05em}
+.stbl td{padding:0.5rem;border-bottom:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0.56rem 1.3rem;border-radius:var(--r);font-family:inherit;font-size:0.875rem;font-weight:500;cursor:pointer;transition:all 0.15s;border:none}
+.btn-p{background:var(--navy);color:white} .btn-p:hover{background:var(--navy-l)}
+.btn-s{background:white;color:var(--navy);border:1.5px solid var(--border-m)} .btn-s:hover{background:var(--cream-d)}
+.btn-g{background:var(--gold);color:var(--navy)} .btn-g:hover{filter:brightness(1.08)}
+.btn-report{background:var(--blue);color:white} .btn-report:hover{background:var(--navy-l)}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:1.1rem 3rem;background:var(--cream);border-top:1px solid var(--border);position:sticky;bottom:0;z-index:50}
+.nav-info{font-size:0.77rem;color:#999}
+/* lever sub-section */
+.lsub{background:white;border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1rem}
+@media print{.sb,.hdr,.nav,.no-print{display:none!important}body{background:white}.main{max-width:100%;padding:1rem 2rem}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+Babel.registerPreset('react-classic',{presets:[[Babel.availablePresets['react'],{runtime:'classic'}]]});
+</script>
+<script type="text/babel" data-presets="react-classic">
+const {useState,useRef,useEffect}=React;
+
+/* ─── CONSTANTS ─── */
+const STYPES=[
+  {id:'soc',icon:'🌿',label:'Nature & Society',      desc:'NGOs, communities, environment, biodiversity',      mid:'#2D6A4F',light:'#D8F3DC'},
+  {id:'eco',icon:'📈',label:'Business Ecosystem',    desc:'Suppliers, customers, value chain, industry peers', mid:'#B45309',light:'#FEF3C7'},
+  {id:'reg',icon:'🏛️',label:'Regulators',            desc:'Governments, policy makers, standards bodies',      mid:'#1565C0',light:'#DBEAFE'},
+  {id:'inv',icon:'💼',label:'Financial Institutions & Investors',desc:'Shareholders, banks, ESG funds, rating agencies',mid:'#6B21A8',light:'#EDE9FE'},
+];
+const LEVERS_EXT=[
+  {id:'cost',  tag:'Cost',    label:'Cost Reduction',                  desc:'Sustainability lowers operating costs and improves margins',    bg:'#FFF3E0',tc:'#B45309'},
+  {id:'wtp',   tag:'WTP',     label:'WTP Creation',                    desc:'Customers pay a premium for sustainable offerings',            bg:'#D8F3DC',tc:'#2D6A4F'},
+  {id:'mktEx', tag:'Mkt+',    label:'Market Creation — New Customers', desc:'Reach new customer groups you did not serve before',           bg:'#DBEAFE',tc:'#1565C0'},
+  {id:'mktNew',tag:'New Mkt', label:'Market Creation — New Market',    desc:'Create an entirely new market around an unmet need',           bg:'#EDE9FE',tc:'#6B21A8'},
+  {id:'combo', tag:'Combined',label:'Combination',                     desc:'Two or three levers working in parallel',                     bg:'#F6EDCC',tc:'#8B6414'},
+];
+const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
+const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
+
+const initExt=()=>({
+  grp:{name:'',industry:'',members:''},
+  fish:{name:'',desc:''},
+  mktCtx:{a:'',b:'',c:'',d:'',e:'',f:''},
+  track:{a:'',b:'',c:''},
+  sth:STYPES.map(t=>mkSth(t.id)),
+  vision:'',
+  lever:'',
+  costData:{i:'',ii:'',iii:'',iv:''},
+  wtpData:{i:'',ii:'',iii:'',iv:''},
+  mktExData:{i:'',ii:'',iii:'',iv:''},
+  mktNewData:{i:'',ii:'',iii:'',iv:''},
+  comboLevers:[],
+  comboAdditional:'',
+  curr:'EUR',capex:'',rate:8,pitch:'',
+  chats:{s1:[],s2:[],s3:[],s4:[],s5:[]},
+  chatRegenUsed:{s1:false,s2:false,s3:false,s4:false,s5:false},
+  consultantReport:'',cfoHtml:'',
+  consultantRegenUsed:false,cfoRegenUsed:false,
+});
+
+/* ─── LEVER SUB-QUESTION FIELD DEFINITIONS ─── */
+const COST_FIELDS=[
+  {key:'i',  label:'2a.i — Immediacy of cost reduction',   hint:'Will the cost reduction immediately lower operating costs, or is prior capital investment needed first, or both?'},
+  {key:'ii', label:'2a.ii — Triple-win link',              hint:'How does this establish a triple win (economic + social + environmental)? Link to your Triple-Win Vision above.'},
+  {key:'iii',label:'2a.iii — Competitive advantages & gaps',hint:'What competitive advantages do you have to make this a reality? What competences are you missing?'},
+  {key:'iv', label:'2a.iv — Investment requirements',      hint:'What investments will you need to make to seize this opportunity?'},
+];
+const WTP_FIELDS=[
+  {key:'i',  label:'2b.i — Target segment & WTP rationale', hint:'What market segment are you targeting, and where, to establish your proof of concept? Why would the target customer be willing to pay more?'},
+  {key:'ii', label:'2b.ii — Triple-win link',               hint:'How does this establish a triple win? Link to your Triple-Win Vision above.'},
+  {key:'iii',label:'2b.iii — Competitive advantages & gaps', hint:'What competitive advantages do you have to make this a reality? What competences are you missing?'},
+  {key:'iv', label:'2b.iv — Investment requirements',        hint:'What investments will you need to make to seize this opportunity?'},
+];
+const MKT_EX_FIELDS=[
+  {key:'i',  label:'2c.i.1 — Why would these customers consider your offer?', hint:'Lower price? New value proposition? Both? Be specific about what makes your offer relevant to this group.'},
+  {key:'ii', label:'2c.i.2 — Triple-win link',                               hint:'How does this establish a triple win? Link to your Triple-Win Vision above.'},
+  {key:'iii',label:'2c.i.3 — Competitive advantages & gaps',                  hint:'What competitive advantages do you have to make this a reality? What competences are missing?'},
+  {key:'iv', label:'2c.i.4 — Investment requirements',                        hint:'What investments will you need to make to seize this opportunity?'},
+];
+const MKT_NEW_FIELDS=[
+  {key:'i',  label:'2c.ii.1 — Unmet need & value creation', hint:'What is the unmet need, for whom, and how will your offer create value where none existed before?'},
+  {key:'ii', label:'2c.ii.2 — Triple-win link',             hint:'How does this establish a triple win? Link to your Triple-Win Vision above.'},
+  {key:'iii',label:'2c.ii.3 — Competitive advantages & gaps',hint:'What competitive advantages do you have to make this a reality? What competences are missing?'},
+  {key:'iv', label:'2c.ii.4 — Investment requirements',     hint:'What investments will you need to make to seize this opportunity?'},
+];
+
+/* ─── HELPERS ─── */
+function fmt(n,c){
+  if(n===''||n===null||n===undefined)return'—';
+  const v=parseFloat(n);if(isNaN(v))return'—';
+  const sg=v<0?'−':'';const a=Math.abs(v);
+  let s;if(a>=1e9)s=(a/1e9).toFixed(1)+'B';else if(a>=1e6)s=(a/1e6).toFixed(1)+'M';else if(a>=1e3)s=(a/1e3).toFixed(0)+'K';else s=Math.round(a).toString();
+  return`${sg}${c} ${s}`;
+}
+function af(r,n){const rr=r/100;return rr===0?n:(1-Math.pow(1+rr,-n))/rr;}
+
+/* ─── API KEY ─── */
+let _apiKey=(window.__API_KEY__)||'';
+function getApiKey(){return _apiKey;}
+function setApiKey(k){_apiKey=k.trim();}
+
+/* ─── AI CALL ─── */
+async function callClaude(system,messages,maxTokens=600,model='claude-sonnet-4-6'){
+  if(!_apiKey)throw new Error('NO_KEY');
+  const RETRIES=3;
+  for(let attempt=0;attempt<RETRIES;attempt++){
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model,max_tokens:maxTokens,system,messages})
+    });
+    const data=await resp.json();
+    if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
+    if(!resp.ok)throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
+    if(data.error)throw new Error(data.error.message);
+    return data.content[0].text;
+  }
+}
+
+/* ─── WATERFALL ─── */
+function Waterfall({sth,capex,rate,horizon,curr}){
+  const cap=parseFloat(capex)||0;
+  const segs=[];
+  if(cap>0)segs.push({label:'CAPEX',value:-cap,color:'#C0392B',icon:null});
+  sth.filter(x=>x.on&&parseFloat(x.annual)>0).forEach(x=>{
+    const t=STYPES.find(t=>t.id===x.id);
+    segs.push({label:t.label.split(' ')[0],value:parseFloat(x.annual)*af(rate,horizon),color:t.mid,icon:t.icon});
+  });
+  if(!segs.length)return<div style={{textAlign:'center',padding:'2rem',color:'rgba(255,255,255,0.22)',fontSize:'0.82rem'}}>Enter annual benefit values above to see the NPV+ waterfall</div>;
+  let run=0;
+  const bars=segs.map(s=>{const bot=run;run+=s.value;return{...s,bot,top:run};});
+  const total=run;
+  bars.push({label:'NPV+',value:total,bot:0,top:total,color:total>=0?'#0D3B7A':'#C0392B',isTotal:true,icon:null});
+  const allv=bars.flatMap(b=>[b.bot,b.top,0]);
+  const mn=Math.min(...allv),mx=Math.max(...allv),rng=mx-mn||1;
+  const W=560,H=230,ml=8,mr=8,mt=30,mb=48,cW=W-ml-mr,cH=H-mt-mb;
+  const n=bars.length,bw=Math.min(56,cW/n*0.58),gap=cW/n;
+  const toY=v=>mt+cH*(1-(v-mn)/rng);
+  const bx=i=>ml+i*gap+(gap-bw)/2;
+  const z0=toY(0);
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}}>
+      <line x1={ml} x2={W-mr} y1={z0} y2={z0} stroke="rgba(255,255,255,0.15)" strokeWidth={1} strokeDasharray="4,3"/>
+      {bars.map((b,i)=>{
+        const y1=toY(Math.max(b.bot,b.top)),y2=toY(Math.min(b.bot,b.top)),bh=Math.max(y2-y1,3),cx=bx(i)+bw/2,isNeg=b.value<0;
+        return(
+          <g key={i}>
+            {!b.isTotal&&i<bars.length-2&&<line x1={bx(i)+bw} x2={bx(i+1)} y1={toY(b.top)} y2={toY(b.top)} stroke="rgba(255,255,255,0.15)" strokeDasharray="3,3" strokeWidth={1}/>}
+            <rect x={bx(i)} y={y1} width={bw} height={bh} fill={b.color} rx={4} opacity={b.isTotal?1:0.9}/>
+            {b.icon&&<text x={cx} y={y1-18} textAnchor="middle" fontSize={13}>{b.icon}</text>}
+            <text x={cx} y={H-mb+15} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.45)" fontFamily="DM Sans,sans-serif">{b.label}</text>
+            <text x={cx} y={isNeg?y2+13:y1-7} textAnchor="middle" fontSize={10} fontWeight="500" fill={isNeg?'#FC9D9D':'#A8E6CF'} fontFamily="DM Sans,sans-serif">{fmt(b.value,curr)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ─── AI THINKING LOADER ─── */
+function AIThinking({messages}){
+  const [idx,setIdx]=useState(0);
+  useEffect(()=>{const t=setInterval(()=>setIdx(i=>(i+1)%messages.length),2800);return()=>clearInterval(t);},[messages.length]);
+  return(
+    <div className="ai-thinking">
+      <div className="ai-thinking-icon">
+        <div className="ring"/><div className="ring ring2"/><div className="ring ring3"/>
+        <div className="core">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26C17.81 13.47 19 11.38 19 9c0-3.87-3.13-7-7-7z" fill="rgba(255,255,255,0.9)"/>
+            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1z" fill="rgba(255,255,255,0.6)"/>
+          </svg>
+        </div>
+      </div>
+      <div className="ai-thinking-msg">{messages[idx]}</div>
+      <div className="ai-thinking-bar"><div className="ai-thinking-bar-fill" key={idx}/></div>
+    </div>
+  );
+}
+
+/* ─── AI CHAT PANEL ─── */
+function AIChat({stageLabel,systemPrompt,buildPrompt,onUpdate,initialMsgs,regenUsed,onRegenUsed}){
+  const alreadyUsed=(initialMsgs||[]).length>1;
+  const [msgs,setMsgs]=useState(alreadyUsed?initialMsgs:[]);
+  const [loading,setLoading]=useState(false);
+  const [started,setStarted]=useState(alreadyUsed);
+  const [error,setError]=useState(null);
+  const endRef=useRef(null);
+  useEffect(()=>{if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
+  const syncMsgs=m=>{setMsgs(m);if(onUpdate)onUpdate(m);};
+  const doStart=async()=>{
+    setStarted(true);setLoading(true);setError(null);
+    const prompt=buildPrompt();
+    const initMsg={role:'user',content:prompt};
+    syncMsgs([initMsg]);
+    try{
+      const text=await callClaude(systemPrompt,[initMsg],1600);
+      syncMsgs([initMsg,{role:'assistant',content:text}]);
+    }catch(e){setError('AI error: '+e.message);setStarted(false);}
+    setLoading(false);
+  };
+  const doRegen=()=>{setStarted(false);syncMsgs([]);if(onRegenUsed)onRegenUsed();};
+  const renderMsg=text=>{
+    return text.split('\n').map((line,i)=>{
+      if(/^\d+\.\s/.test(line))return<li key={i} style={{marginBottom:'0.25rem'}} dangerouslySetInnerHTML={{__html:line.replace(/^\d+\.\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+      if(/^[-•]\s/.test(line))return<li key={i} style={{marginBottom:'0.25rem'}} dangerouslySetInnerHTML={{__html:line.replace(/^[-•]\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+      if(line.trim()==='')return<br key={i}/>;
+      return<p key={i} dangerouslySetInnerHTML={{__html:line.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}}/>;
+    });
+  };
+  const done=started&&!loading&&msgs.filter(m=>m.role==='assistant').length>0;
+  return(
+    <div style={{marginTop:'1.5rem',background:'white',border:'1px solid var(--border)',borderLeft:'4px solid var(--blue)',borderRadius:'var(--r)',padding:'1.25rem 1.5rem'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.75rem'}}>
+        <div>
+          <span style={{fontSize:'0.65rem',fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--blue)'}}>AI Strategy Review</span>
+          <span style={{fontSize:'0.72rem',color:'#999',marginLeft:8}}>{stageLabel}</span>
+        </div>
+        {done&&<span style={{fontSize:'0.65rem',background:'#E8F5E9',color:'#2E7D32',padding:'2px 8px',borderRadius:10,fontWeight:500}}>{regenUsed?'✓ Final feedback':'✓ Feedback received'}</span>}
+      </div>
+      {!started&&<>
+        <div style={{fontSize:'0.8rem',color:'var(--navy)',lineHeight:1.6,marginBottom:'0.875rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'0.7rem 0.9rem'}}>
+          <strong>⚠ Before you request:</strong> make sure your analysis is as complete as possible. {regenUsed?<span style={{color:'#c33',fontWeight:600}}>This is your final feedback — no further regenerations available.</span>:<span>You can refresh this feedback once after receiving it — save that option for genuine revisions.</span>}
+        </div>
+        <button className="btn btn-p" onClick={doStart} disabled={loading} style={{fontSize:'0.82rem'}}>✦ Get AI Feedback on This Stage</button>
+      </>}
+      {started&&!done&&loading&&<AIThinking messages={['Analysing your inputs…','Identifying strategic gaps…','Searching for industry parallels…','Formulating observations…','Almost there…']}/>}
+      {done&&<div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',lineHeight:1.75,fontSize:'0.88rem',color:'var(--navy)'}}>{renderMsg(msgs.find(m=>m.role==='assistant')?.content||'')}</div>}
+      {done&&<div style={{marginTop:'0.875rem',background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.75rem 1rem',fontSize:'0.82rem',color:'#5A4000',lineHeight:1.6}}>
+        <strong>↑ Revise your analysis above</strong> based on this feedback — edit the text fields, then continue. The AI Consultant and CFO Report will use your latest answers.
+        {!regenUsed&&<div style={{marginTop:'0.5rem'}}>Made substantial revisions? <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.82rem',textDecoration:'underline',padding:0}} onClick={doRegen}>↺ Request fresh feedback (1 remaining)</button></div>}
+      </div>}
+      {error&&<div style={{color:'#c33',fontSize:'0.8rem',marginTop:'0.5rem'}}>{error} <button style={{background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.8rem',textDecoration:'underline'}} onClick={()=>{setStarted(false);setError(null);}}>Try again</button></div>}
+      <div ref={endRef}/>
+    </div>
+  );
+}
+
+/* ─── COACHING DIGEST (extended — 5 stages) ─── */
+function coachingDigestExt(chats){
+  const stages=[
+    {msgs:chats.s1||[],label:'Market Context'},
+    {msgs:chats.s2||[],label:'Industry Track Record'},
+    {msgs:chats.s3||[],label:'Stakeholder Analysis'},
+    {msgs:chats.s4||[],label:'Strategic Opportunity'},
+    {msgs:chats.s5||[],label:'NPV+ Valuation'},
+  ];
+  const parts=stages.map(({msgs,label})=>{
+    const ai=msgs.filter((m,i)=>m.role==='assistant'&&i>0);
+    if(!ai.length)return'';
+    return`\n--- AI Coaching: ${label} ---\n${ai[ai.length-1].content.slice(0,600)}`;
+  }).filter(Boolean);
+  return parts.join('\n').slice(0,3500);
+}
+
+/* ─── LEVER SUB-SECTION COMPONENT ─── */
+function LeverSubSection({title,color,fields,data,onChange}){
+  return(
+    <div className="lsub" style={{borderLeft:`4px solid ${color}`,border:`1px solid ${color}22`,borderLeft:`4px solid ${color}`}}>
+      <div style={{fontSize:'0.75rem',fontWeight:700,color:color,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'1rem'}}>{title}</div>
+      {fields.map((f,i)=>(
+        <div className="fld" key={f.key} style={{marginBottom:i===fields.length-1?0:'1.1rem'}}>
+          <label>{f.label}</label>
+          <textarea value={data[f.key]||''} onChange={e=>onChange(f.key,e.target.value)} placeholder={f.hint} style={{minHeight:76}}/>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ─── */
+function SidebarExt({step,setStep}){
+  const its=[
+    {id:0,lbl:'Group & challenge',  sec:'Start'},
+    {id:1,lbl:'1 · Market Context', sec:'Industry'},
+    {id:2,lbl:'2 · Track Record',   sec:'Industry'},
+    {id:3,lbl:'3 · Stakeholders',   sec:'Analysis'},
+    {id:4,lbl:'4 · Strategic Opp.', sec:'Analysis'},
+    {id:5,lbl:'5 · NPV+',           sec:'Analysis'},
+    {id:6,lbl:'Summary & Report',   sec:'Output'},
+  ];
+  let ls='';
+  return(
+    <nav className="sb">
+      {its.map(it=>{
+        const ns=it.sec!==ls;if(ns)ls=it.sec;
+        const d=step>it.id,a=step===it.id;
+        return<div key={it.id}>
+          {ns&&<><div className="sb-div"/><div className="sb-lbl">{it.sec}</div></>}
+          <div className={`sb-item ${a?'active':''} ${d?'done':''}`} onClick={()=>(d||a)&&setStep(it.id)}>
+            <div className="sb-dot">{d?'✓':it.id===0||it.id===6?'◆':it.id}</div>{it.lbl}
+          </div>
+        </div>;
+      })}
+      <div style={{padding:'1.25rem 1.5rem',marginTop:'auto',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+        <div style={{fontSize:'0.62rem',color:'rgba(255,255,255,0.2)',lineHeight:1.5}}>© 2026 AcpitConsulting<br/><a href="mailto:acpitcons.adm@gmail.com" style={{color:'rgba(255,255,255,0.35)',textDecoration:'none'}}>Contact us</a></div>
+      </div>
+    </nav>
+  );
+}
+
+/* ─── STEP 0 · GROUP & CHALLENGE ─── */
+function S0({st,set}){
+  const sg=k=>e=>set(s=>({...s,grp:{...s.grp,[k]:e.target.value}}));
+  const sf=k=>e=>set(s=>({...s,fish:{...s.fish,[k]:e.target.value}}));
+  return<div>
+    <div className="card" style={{textAlign:'center',paddingBottom:'2rem'}}>
+      <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(74,171,232,0.12)',borderRadius:20,padding:'4px 14px',fontSize:'0.72rem',fontWeight:600,color:'var(--gold-d)',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:'1rem'}}>Extended Analysis</div>
+      <h2 className="ctitle" style={{fontSize:'2rem',marginTop:'0.25rem'}}>Sustainability Strategy Compass</h2>
+      <p className="csub" style={{margin:'0.75rem auto 0',textAlign:'center'}}>A deeper analysis — market context, industry track record, and lever deep-dives — with AI coaching at every stage.</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'0.75rem',margin:'2rem auto 0',maxWidth:'800px'}}>
+        {[['1','Market','Contextualise your industry dynamics'],['2','Track Record','Learn from sustainability successes & failures'],['3','Stakeholders','Map who drives the disruption'],['4','Strategy','Deep-dive into your strategic lever'],['5','NPV+','Quantify the value with a full waterfall']].map(([n,t,d])=>(
+          <div key={n} style={{background:'var(--cream-d)',borderRadius:'var(--r)',padding:'0.875rem',textAlign:'left'}}>
+            <div style={{width:26,height:26,background:'var(--navy)',color:'white',borderRadius:'50%',fontFamily:"'Playfair Display',serif",fontSize:'0.8rem',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'0.5rem'}}>{n}</div>
+            <div style={{fontSize:'0.78rem',fontWeight:500,color:'var(--navy)',marginBottom:'0.25rem'}}>{t}</div>
+            <div style={{fontSize:'0.7rem',color:'#666',lineHeight:1.5}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card">
+      <div className="ey">Group</div><h2 className="ctitle">Who are you?</h2><div className="divl"/>
+      <div className="g2">
+        <div className="fld"><label>Group name</label><input type="text" value={st.grp.name} onChange={sg('name')} placeholder="e.g. Team Lighthouse"/></div>
+        <div className="fld"><label>Industry / sector</label><input type="text" value={st.grp.industry} onChange={sg('industry')} placeholder="e.g. Consumer goods, Energy…"/></div>
+      </div>
+      <div className="fld" style={{marginBottom:0}}><label>Group members</label><textarea value={st.grp.members} onChange={sg('members')} placeholder="List member names…" style={{minHeight:52}}/></div>
+    </div>
+    <div className="card">
+      <div className="ey">Your challenge</div>
+      <h2 className="ctitle">Name your sustainability disruptor</h2>
+      <p className="csub">Define one specific, salient "fish" — a sustainability challenge from your current business experience.</p>
+      <div className="divl"/>
+      <div style={{background:'white',border:'1.5px solid var(--border-m)',borderRadius:'var(--r-lg)',padding:'1.5rem'}}>
+        <div className="fld"><label>Challenge name</label><input type="text" value={st.fish.name} onChange={sf('name')} placeholder="e.g. Carbon pricing risk, Supply-chain deforestation, Plastic packaging regulation…"/></div>
+        <div className="fld" style={{marginBottom:0}}><label>Brief description</label><textarea value={st.fish.desc} onChange={sf('desc')} placeholder="What makes this a disruptor for your business? Why is it salient now?" style={{minHeight:80}}/></div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ─── STEP 1 · MARKET CONTEXT ─── */
+function S1({st,set}){
+  const umc=k=>e=>set(s=>({...s,mktCtx:{...s.mktCtx,[k]:e.target.value}}));
+
+  const sysPrompt=`SCOPE GUARDRAIL: This tool is scoped exclusively to challenges with a meaningful ESG dimension. If the challenge lacks a genuine sustainability angle, politely decline.
+
+You are a sustainability strategy professor helping an executive education group understand the structural context of their market. Review their market context analysis with intellectual rigor. Challenge vague or generic answers. Reference real market dynamics relevant to their industry — commodity cycles, consolidation waves, regulatory shifts, demand disruptions. Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off. Start directly with point 1. Hard limit: 300 words.`;
+
+  const buildPrompt=()=>{
+    const {a,b,c,d,e,f}=st.mktCtx;
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) is analyzing challenge: "${st.fish.name||'unspecified'}".
+
+MARKET CONTEXT ANALYSIS:
+1a. Market/segment and location: ${a||'not answered'}
+1b. Industry cost pressure: ${b||'not answered'}
+1c. Price pressure: ${c||'not answered'}
+1d. Growth outlook (3–5 years): ${d||'not answered'}
+1e. Regulatory impact on cost/price/volume: ${e||'not answered'}
+1f. Positive profit outlook: ${f||'not answered'}
+
+Review this market context analysis. Challenge shallow answers. Are these dynamics material to the sustainability challenge? What key structural forces are they missing or understating? Reference 1–2 comparable industry dynamics from real markets.`;
+  };
+
+  const QA=({label,hint,k})=>(
+    <div className="fld">
+      <label>{label}</label>
+      <textarea value={st.mktCtx[k]||''} onChange={umc(k)} placeholder={hint} style={{minHeight:72}}/>
+    </div>
+  );
+
+  return<div>
+    <div className="card">
+      <div className="ey">Section 1 — Industry Context</div>
+      <h2 className="ctitle">Market Context</h2>
+      <p className="csub">Before identifying sustainability opportunities, establish the structural context of your market. These answers will inform every subsequent step.</p>
+      <div className="divl"/>
+      <QA k="a" label="1a. What market or market segment are you operating in? Where?" hint="Be specific: product category, geography, B2B vs B2C, competitive structure…"/>
+      <QA k="b" label="1b. Is your industry facing a significant increase in cost pressure?" hint="What is driving costs up? Raw materials, labour, energy, logistics, compliance? How significant is the pressure?"/>
+      <QA k="c" label="1c. Has price pressure in your market increased? Is it forcing competitors to compete on price?" hint="Are customers demanding lower prices? Are competitors undercutting? What is driving this dynamic?"/>
+      <QA k="d" label="1d. What is the growth outlook for the next three to five years?" hint="Is the market expanding, contracting, or stagnating? What are the key growth or decline drivers?"/>
+      <QA k="e" label="1e. Will regulation have a significant impact on the cost, price, and volume drivers of your market?" hint="Name specific regulations (current or expected) and explain how they will affect your cost structure, pricing power, and volumes."/>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>1f. Do you expect a positive profit outlook for your industry in the next three to five years?</label>
+        <textarea value={st.mktCtx.f||''} onChange={umc('f')} placeholder="Why or why not? Consider margin trends, consolidation, structural forces…" style={{minHeight:72}}/>
+      </div>
+    </div>
+    <AIChat
+      stageLabel="Market Context"
+      systemPrompt={sysPrompt}
+      buildPrompt={buildPrompt}
+      onUpdate={m=>set(s=>({...s,chats:{...s.chats,s1:m}}))}
+      initialMsgs={st.chats?.s1}
+      regenUsed={!!st.chatRegenUsed?.s1}
+      onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),s1:true}}))}
+    />
+  </div>;
+}
+
+/* ─── STEP 2 · TRACK RECORD ─── */
+function S2({st,set}){
+  const utr=k=>e=>set(s=>({...s,track:{...s.track,[k]:e.target.value}}));
+
+  const sysPrompt=`SCOPE GUARDRAIL: This tool is scoped exclusively to sustainability strategy in a business context.
+
+You are a sustainability strategy professor reviewing an executive education group's assessment of their industry's sustainability track record. Test whether they have drawn the right lessons from past successes and failures. Challenge surface-level analysis — "it failed because customers didn't care" is not enough. Reference real documented cases of sustainability success and failure in their industry or comparable ones (Interface carpet tiles, H&M Conscious Collection, Volkswagen dieselgate, Unilever Sustainable Living brands, Danone B-Corp transition, Theranos-style overpromising on sustainability claims). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off. Start directly with point 1. Hard limit: 300 words.`;
+
+  const buildPrompt=()=>{
+    const {a,b,c}=st.track;
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) analyzing challenge: "${st.fish.name||'unspecified'}".
+
+INDUSTRY SUSTAINABILITY TRACK RECORD:
+2a. Sustainability initiatives with business success and why: ${a||'not answered'}
+2b. Why sustainability initiatives failed (customer/business/stakeholder support, other factors): ${b||'not answered'}
+2c. Key findings for making new sustainability projects a success: ${c||'not answered'}
+
+Review this track record assessment. Are the success/failure explanations analytically rigorous or surface-level? Have they missed important documented cases from their or comparable industries? Are the 'key findings' specific and actionable or generic and obvious? Reference 1–2 real documented cases of sustainability success or failure.`;
+  };
+
+  return<div>
+    <div className="card">
+      <div className="ey">Section 2 — Industry Context</div>
+      <h2 className="ctitle">Industry Sustainability Track Record</h2>
+      <p className="csub">Examine what has and has not worked for sustainability initiatives in your industry. These lessons should directly shape the strategy you develop in later steps.</p>
+      <div className="divl"/>
+      <div className="fld">
+        <label>2a. Which sustainability initiatives (cost reduction, WTP creation, market creation) in your industry have had business success? Why?</label>
+        <textarea value={st.track.a||''} onChange={utr('a')} placeholder="Name specific initiatives, companies, or programmes. What made them commercially successful — not just environmentally impactful?" style={{minHeight:100}}/>
+      </div>
+      <div className="fld">
+        <label>2b. When sustainability initiatives failed, why? (customer support, business support, stakeholder support, execution, external factors…)</label>
+        <textarea value={st.track.b||''} onChange={utr('b')} placeholder="Be specific: which failures, what went wrong, and what was the root cause? Were there external shocks (wars, technology disruptions, commodity price swings)?" style={{minHeight:100}}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2c. Looking forward: what are your key findings for making new sustainability projects in your market a success?</label>
+        <textarea value={st.track.c||''} onChange={utr('c')} placeholder="Draw directly from 2a and 2b above. What are the non-obvious conditions for success specific to your industry?" style={{minHeight:100}}/>
+      </div>
+    </div>
+    <AIChat
+      stageLabel="Industry Track Record"
+      systemPrompt={sysPrompt}
+      buildPrompt={buildPrompt}
+      onUpdate={m=>set(s=>({...s,chats:{...s.chats,s2:m}}))}
+      initialMsgs={st.chats?.s2}
+      regenUsed={!!st.chatRegenUsed?.s2}
+      onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),s2:true}}))}
+    />
+  </div>;
+}
+
+/* ─── STEP 3 · STAKEHOLDER ANALYSIS ─── */
+function S3({st,set}){
+  const tog=id=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,on:!x.on}:x)}));
+  const upd=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
+
+  const sysPrompt=`SCOPE GUARDRAIL: This tool is designed exclusively for challenges with a clear ESG dimension. If the challenge lacks a genuine sustainability angle, politely decline.
+
+You are a sustainability strategy professor facilitating an executive education session on stakeholder analysis. Review the group's work with intellectual rigor. Challenge vague answers. Identify gaps. Reference real companies (Unilever, BASF, Ørsted, Nestlé, Volkswagen, Patagonia, Apple, etc.) relevant to their industry context. Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off, no general statements. Start directly with point 1. Hard limit: 300 words.`;
+
+  const buildPrompt=()=>{
+    const actv=st.sth.filter(x=>x.on);
+    if(!actv.length)return`The group is analyzing challenge: "${st.fish.name||'unspecified'}" in industry: "${st.grp.industry||'unspecified'}". They have not yet activated any stakeholder categories. Briefly explain why completing a thorough stakeholder analysis is critical and ask what stakeholders are most relevant to their industry.`;
+    const text=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`\n${tp.label}:\n  Who: ${x.who||'not specified'}\n  Pressure: ${x.pressure||'not specified'}\n  Business impact: ${x.impact||'not specified'}\n  Opportunity: ${x.opp||'not specified'}`;}).join('');
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'unspecified'}) has analyzed stakeholders for challenge: "${st.fish.name}".\n\nIndustry Market Context summary: Market="${st.mktCtx.a?.slice(0,100)||'—'}" | Cost pressure="${st.mktCtx.b?.slice(0,80)||'—'}" | Regulation="${st.mktCtx.e?.slice(0,80)||'—'}"\n\nStakeholder analysis:${text}\n\nReview this analysis. Identify what they may have missed, challenge any vague or shallow answers, and reference 1–2 comparable industry cases. Point out if inactive stakeholder categories are actually material for their industry given the market context.`;
+  };
+
+  return<div>
+    <div className="card">
+      <div className="ey">Step 3 — Analysis</div>
+      <h2 className="ctitle">Stakeholder Analysis</h2>
+      <p className="csub">Identify which stakeholder categories are driving the sustainability pressure. <strong>Each active stakeholder will become a benefit line in your NPV+ waterfall in Step 5</strong> — linking strategic analysis directly to the financial case.</p>
+      <div className="divl"/>
+      {STYPES.map(tp=>{
+        const d=st.sth.find(x=>x.id===tp.id);
+        return<div key={tp.id} className="sc" style={d.on?{borderColor:tp.mid}:{}}>
+          <div className="sc-hd" onClick={()=>tog(tp.id)}>
+            <div className="sc-hl">
+              <div className="sc-ic" style={{background:tp.light}}>{tp.icon}</div>
+              <div><div className="sc-nm" style={{color:d.on?tp.mid:'#333'}}>{tp.label}</div><div className="sc-ds">{tp.desc}</div></div>
+            </div>
+            <button className="tgl" style={d.on?{background:tp.mid}:{}} onClick={e=>{e.stopPropagation();tog(tp.id);}}>
+              <div className="tgl-k" style={d.on?{left:21}:{}}/>
+            </button>
+          </div>
+          {d.on&&<div className="sc-body">
+            <div className="divl" style={{marginTop:0,marginBottom:'1.1rem'}}/>
+            <div className="fld"><label>Who specifically?</label><textarea value={d.who} onChange={e=>upd(tp.id,'who',e.target.value)} placeholder="Name the specific actors within this category driving the pressure…" style={{minHeight:68}}/></div>
+            <div className="fld"><label>Specific pressure</label><textarea value={d.pressure} onChange={e=>upd(tp.id,'pressure',e.target.value)} placeholder="The precise mechanism: regulation name, customer requirement, market signal…" style={{minHeight:68}}/></div>
+            <div className="fld"><label>Impact on your business</label><textarea value={d.impact} onChange={e=>upd(tp.id,'impact',e.target.value)} placeholder="How does this affect costs, revenues, operations, access to capital or reputation?" style={{minHeight:68}}/></div>
+            <div className="fld" style={{marginBottom:0}}><label>Where is the opportunity?</label><textarea value={d.opp} onChange={e=>upd(tp.id,'opp',e.target.value)} placeholder="What opportunity does acting on this disruption create? Why would it give you a competitive edge?" style={{minHeight:68}}/></div>
+          </div>}
+        </div>;
+      })}
+      <p style={{fontSize:'0.77rem',color:'#999',marginTop:'0.5rem'}}>Activate at least one stakeholder category. Each active category appears as a value line in Step 5.</p>
+    </div>
+    <AIChat
+      stageLabel="Stakeholder Analysis"
+      systemPrompt={sysPrompt}
+      buildPrompt={buildPrompt}
+      onUpdate={m=>set(s=>({...s,chats:{...s.chats,s3:m}}))}
+      initialMsgs={st.chats?.s3}
+      regenUsed={!!st.chatRegenUsed?.s3}
+      onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),s3:true}}))}
+    />
+  </div>;
+}
+
+/* ─── STEP 4 · STRATEGIC OPPORTUNITY ─── */
+function S4({st,set}){
+  const upd=(k,v)=>set(s=>({...s,[k]:v}));
+  const updNested=(obj,k,v)=>set(s=>({...s,[obj]:{...s[obj],[k]:v}}));
+  const toggleComboLever=id=>set(s=>({...s,comboLevers:s.comboLevers.includes(id)?s.comboLevers.filter(x=>x!==id):[...s.comboLevers,id]}));
+
+  const linfo=LEVERS_EXT.find(l=>l.id===st.lever);
+
+  const sysPrompt=`SCOPE GUARDRAIL: This tool is scoped exclusively to sustainability strategy. If the challenge lacks a genuine ESG dimension, politely decline.
+
+You are a sustainability strategy professor reviewing an executive education group's strategic opportunity analysis. Review their triple-win vision, lever selection, and detailed sub-question answers. Challenge whether the triple-win is genuinely triple (environmental + social + economic). Test whether competitive advantages are real or generic. Probe investment requirements for completeness and realism. For combination strategies, challenge whether the levers are truly synergistic or simply additive. Reference comparable real-world strategic pivots (Ørsted from oil to offshore wind, Interface Mission Zero, Unilever Sustainable Living brands, Renault EV, Danone B-Corp). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off. Start directly with point 1. Hard limit: 300 words.`;
+
+  const buildPrompt=()=>{
+    const c=(s,n)=>(s||'').slice(0,n);
+    const linfo=LEVERS_EXT.find(l=>l.id===st.lever);
+    let leverDetail='(No lever selected or no sub-questions completed)';
+    if(st.lever==='cost')leverDetail=`Cost Reduction:\n  2a.i (Immediacy): ${c(st.costData.i,200)}\n  2a.ii (Triple-win link): ${c(st.costData.ii,200)}\n  2a.iii (Advantages & gaps): ${c(st.costData.iii,200)}\n  2a.iv (Investments): ${c(st.costData.iv,200)}`;
+    else if(st.lever==='wtp')leverDetail=`WTP Creation:\n  2b.i (Target segment & WTP): ${c(st.wtpData.i,200)}\n  2b.ii (Triple-win link): ${c(st.wtpData.ii,200)}\n  2b.iii (Advantages & gaps): ${c(st.wtpData.iii,200)}\n  2b.iv (Investments): ${c(st.wtpData.iv,200)}`;
+    else if(st.lever==='mktEx')leverDetail=`Market Creation — New Customers:\n  2c.i.1 (Why consider): ${c(st.mktExData.i,200)}\n  2c.i.2 (Triple-win link): ${c(st.mktExData.ii,200)}\n  2c.i.3 (Advantages & gaps): ${c(st.mktExData.iii,200)}\n  2c.i.4 (Investments): ${c(st.mktExData.iv,200)}`;
+    else if(st.lever==='mktNew')leverDetail=`Market Creation — New Market:\n  2c.ii.1 (Unmet need): ${c(st.mktNewData.i,200)}\n  2c.ii.2 (Triple-win link): ${c(st.mktNewData.ii,200)}\n  2c.ii.3 (Advantages & gaps): ${c(st.mktNewData.iii,200)}\n  2c.ii.4 (Investments): ${c(st.mktNewData.iv,200)}`;
+    else if(st.lever==='combo'){
+      const parts=[];
+      if(st.comboLevers.includes('cost'))parts.push(`  Cost: immediacy="${c(st.costData.i,120)}" | triple-win="${c(st.costData.ii,120)}" | advantages="${c(st.costData.iii,120)}" | investments="${c(st.costData.iv,100)}"`);
+      if(st.comboLevers.includes('wtp'))parts.push(`  WTP: segment="${c(st.wtpData.i,120)}" | triple-win="${c(st.wtpData.ii,120)}" | advantages="${c(st.wtpData.iii,120)}" | investments="${c(st.wtpData.iv,100)}"`);
+      if(st.comboLevers.includes('mktEx'))parts.push(`  New Customers: reason="${c(st.mktExData.i,120)}" | triple-win="${c(st.mktExData.ii,120)}" | advantages="${c(st.mktExData.iii,100)}"`);
+      if(st.comboLevers.includes('mktNew'))parts.push(`  New Market: need="${c(st.mktNewData.i,120)}" | triple-win="${c(st.mktNewData.ii,120)}" | advantages="${c(st.mktNewData.iii,100)}"`);
+      leverDetail=`Combination (levers: ${st.comboLevers.join('+')||'none selected'}):\n${parts.join('\n')}\n  2d.ii Additional combined wins: "${c(st.comboAdditional,200)}"`;
+    }
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) analyzing: "${st.fish.name||'unspecified'}".
+
+Market context: market="${c(st.mktCtx.a,150)}" | cost pressure="${c(st.mktCtx.b,100)}" | regulation="${c(st.mktCtx.e,100)}"
+Track record lessons: "${c(st.track.c,200)}"
+
+TRIPLE-WIN VISION: ${c(st.vision,400)||'not provided'}
+
+STRATEGIC LEVER: ${linfo?.label||'none selected'}
+${leverDetail}
+
+Challenge their strategic opportunity analysis. Is the triple-win vision genuinely triple? Is the lever the right fit given this market context and track record? Are competitive advantages specific or generic? Are investment requirements realistic? For combination strategies, are the levers truly synergistic? Reference 1 comparable real-world case.`;
+  };
+
+  const COMBO_LEVERS=[
+    {id:'cost',  label:'Cost Reduction',         color:'#B45309'},
+    {id:'wtp',   label:'WTP Creation',            color:'#2D6A4F'},
+    {id:'mktEx', label:'New Customer Group',      color:'#1565C0'},
+    {id:'mktNew',label:'New Market',              color:'#6B21A8'},
+  ];
+
+  return<div>
+    <div className="card">
+      <div className="ey">Step 4 — Analysis</div>
+      <h2 className="ctitle">Strategic Opportunity</h2>
+      <p className="csub">Define your triple-win vision, select the lever that best captures the opportunity, and detail the strategic logic behind your choice.</p>
+      <div className="divl"/>
+
+      {/* Triple-Win Vision */}
+      <div style={{background:'linear-gradient(135deg,var(--navy-d) 0%,#003566 100%)',borderRadius:'var(--r-lg)',padding:'1.5rem',marginBottom:'1.75rem',border:'1px solid rgba(74,171,232,0.25)'}}>
+        <div style={{fontSize:'0.67rem',fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'0.5rem'}}>Triple-Win Vision</div>
+        <div style={{fontSize:'0.82rem',color:'rgba(255,255,255,0.55)',marginBottom:'0.75rem',lineHeight:1.6}}>Describe the sustainability opportunity you want to develop. A genuine triple win creates simultaneous value for the business, society, and the environment.</div>
+        <textarea
+          value={st.vision||''}
+          onChange={e=>upd('vision',e.target.value)}
+          placeholder="Describe the sustainability opportunity: what is the core idea, who benefits, and how does it create value for your business, society, and the environment simultaneously?"
+          style={{minHeight:100,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',color:'white',borderRadius:'var(--r)',width:'100%',padding:'0.6rem 0.85rem',fontFamily:'inherit',fontSize:'0.875rem',lineHeight:1.65,outline:'none',resize:'vertical'}}
+        />
+      </div>
+
+      {/* Lever Selection */}
+      <div className="fld">
+        <label style={{fontSize:'0.85rem',fontWeight:600,color:'var(--navy)'}}>Select your primary strategic lever</label>
+        <div className="lg" style={{marginTop:'0.6rem'}}>
+          {LEVERS_EXT.map(l=>(
+            <div key={l.id} className={`lc ${st.lever===l.id?'sel':''}`}
+              onClick={()=>upd('lever',l.id)}
+              style={l.id==='combo'?{gridColumn:'1/-1'}:{}}
+            >
+              <span className="lt" style={{background:l.bg,color:l.tc}}>{l.tag}</span>
+              <div className="ltt">{l.label}</div>
+              <div className="ld">{l.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Single-lever sub-questions */}
+      {st.lever==='cost'&&<LeverSubSection title="Cost Reduction — Strategic Details" color="#B45309" fields={COST_FIELDS} data={st.costData} onChange={(k,v)=>updNested('costData',k,v)}/>}
+      {st.lever==='wtp'&&<LeverSubSection title="WTP Creation — Strategic Details" color="#2D6A4F" fields={WTP_FIELDS} data={st.wtpData} onChange={(k,v)=>updNested('wtpData',k,v)}/>}
+      {st.lever==='mktEx'&&<LeverSubSection title="Market Creation — New Customers" color="#1565C0" fields={MKT_EX_FIELDS} data={st.mktExData} onChange={(k,v)=>updNested('mktExData',k,v)}/>}
+      {st.lever==='mktNew'&&<LeverSubSection title="Market Creation — New Market" color="#6B21A8" fields={MKT_NEW_FIELDS} data={st.mktNewData} onChange={(k,v)=>updNested('mktNewData',k,v)}/>}
+
+      {/* Combination lever */}
+      {st.lever==='combo'&&<div style={{marginTop:'0.75rem'}}>
+        <div style={{background:'var(--cream-d)',borderRadius:'var(--r)',padding:'1.1rem 1.25rem',marginBottom:'1.25rem'}}>
+          <div style={{fontSize:'0.8rem',fontWeight:600,color:'var(--navy)',marginBottom:'0.6rem'}}>2d.i — Select the levers you are combining</div>
+          <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+            {COMBO_LEVERS.map(cl=>{
+              const sel=st.comboLevers.includes(cl.id);
+              return<button key={cl.id} onClick={()=>toggleComboLever(cl.id)} style={{
+                padding:'0.38rem 1rem',borderRadius:20,
+                border:`1.5px solid ${sel?cl.color:'#D0D5DD'}`,
+                background:sel?`${cl.color}18`:'white',
+                color:sel?cl.color:'#777',
+                fontFamily:'inherit',fontSize:'0.82rem',fontWeight:sel?600:400,
+                cursor:'pointer',transition:'all 0.15s'
+              }}>{sel?'✓ ':''}{cl.label}</button>;
+            })}
+          </div>
+          {st.comboLevers.length===0&&<div style={{fontSize:'0.75rem',color:'#aaa',marginTop:'0.5rem'}}>Select at least two levers above, then complete the sub-questions for each.</div>}
+        </div>
+        {st.comboLevers.includes('cost')&&<LeverSubSection title="Cost Reduction" color="#B45309" fields={COST_FIELDS} data={st.costData} onChange={(k,v)=>updNested('costData',k,v)}/>}
+        {st.comboLevers.includes('wtp')&&<LeverSubSection title="WTP Creation" color="#2D6A4F" fields={WTP_FIELDS} data={st.wtpData} onChange={(k,v)=>updNested('wtpData',k,v)}/>}
+        {st.comboLevers.includes('mktEx')&&<LeverSubSection title="Market Creation — New Customers" color="#1565C0" fields={MKT_EX_FIELDS} data={st.mktExData} onChange={(k,v)=>updNested('mktExData',k,v)}/>}
+        {st.comboLevers.includes('mktNew')&&<LeverSubSection title="Market Creation — New Market" color="#6B21A8" fields={MKT_NEW_FIELDS} data={st.mktNewData} onChange={(k,v)=>updNested('mktNewData',k,v)}/>}
+        {st.comboLevers.length>0&&<div className="fld" style={{marginTop:'0.5rem',marginBottom:0}}>
+          <label>2d.ii — Additional combined wins & integration</label>
+          <textarea value={st.comboAdditional||''} onChange={e=>upd('comboAdditional',e.target.value)}
+            placeholder="In addition to the lever-specific descriptions above, describe any additional 'wins' created by combining these levers — synergies, cross-lever efficiencies, and any additional actions or investments needed to achieve the combined results."
+            style={{minHeight:100}}/>
+        </div>}
+      </div>}
+    </div>
+
+    <AIChat
+      stageLabel="Strategic Opportunity"
+      systemPrompt={sysPrompt}
+      buildPrompt={buildPrompt}
+      onUpdate={m=>set(s=>({...s,chats:{...s.chats,s4:m}}))}
+      initialMsgs={st.chats?.s4}
+      regenUsed={!!st.chatRegenUsed?.s4}
+      onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),s4:true}}))}
+    />
+  </div>;
+}
+
+/* ─── STEP 5 · NPV+ VALUATION ─── */
+function S5({st,set}){
+  const upd=(k,v)=>set(s=>({...s,[k]:v}));
+  const usth=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
+  const [vh,setVh]=useState(5);
+  const actv=st.sth.filter(x=>x.on);
+  const cur=st.curr;
+  const afV=af(st.rate,vh);
+  const capN=parseFloat(st.capex)||0;
+  const totalAnn=actv.reduce((a,x)=>a+(parseFloat(x.annual)||0),0);
+  const npv5=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,5),0);
+  const npv10=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,10),0);
+  const linfo=LEVERS_EXT.find(l=>l.id===st.lever);
+
+  const sysPrompt=`SCOPE GUARDRAIL: This tool is designed exclusively for challenges with a clear ESG dimension. If the challenge lacks a genuine sustainability angle, politely decline.
+
+You are a sustainability strategy professor and former investment banker reviewing a group's NPV+ financial model. Challenge assumptions aggressively but constructively. Ask: What is driving that number? What would a skeptical CFO push back on? What is the single biggest assumption risk? Reference a comparable deal or investment case (e.g. Ørsted wind, Plastic Energy, Interface recycled carpets, Renault EV, Unilever sustainable sourcing). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off, no general statements. Start directly with point 1. Hard limit: 300 words.`;
+
+  const buildPrompt=()=>{
+    const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(parseFloat(x.annual)||0,cur)}/year`;}).join('\n');
+    const c=(s,n)=>(s||'').slice(0,n);
+    return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'unspecified'}) NPV+ model for "${st.fish.name}".
+
+Strategic lever: ${linfo?.label||'not selected'}
+Triple-win vision: ${c(st.vision,200)||'not provided'}
+Investment requirements from Step 4: ${c(st.lever==='cost'?st.costData.iv:st.lever==='wtp'?st.wtpData.iv:st.lever==='mktEx'?st.mktExData.iv:st.lever==='mktNew'?st.mktNewData.iv:st.comboAdditional,200)||'—'}
+
+CAPEX: ${capN>0?fmt(-capN,cur):'None stated'}
+Discount rate (WACC): ${st.rate}%
+
+Benefit lines:
+${lines||'None entered'}
+
+NPV+ at 5 years: ${fmt(npv5,cur)}
+NPV+ at 10 years: ${fmt(npv10,cur)}
+CFO Pitch: ${st.pitch||'not provided'}
+
+Challenge this financial model. Is the CAPEX consistent with the investments identified in Step 4? What assumptions are most fragile? What is the single most important question a CFO would ask? Reference a comparable investment case.`;
+  };
+
+  return<div>
+    <div className="card">
+      <div className="ey">Step 5 — Analysis</div>
+      <h2 className="ctitle">NPV+ Valuation</h2>
+      <p className="csub">Quantify the value of each stakeholder-driven opportunity. The NPV+ framework builds a cumulative waterfall — starting from CAPEX, then adding the present value of each benefit stream.</p>
+      {st.vision&&<div style={{background:'var(--blue-l)',borderRadius:'var(--r)',padding:'0.65rem 1rem',marginTop:'1rem',fontSize:'0.82rem',color:'var(--navy)',borderLeft:'3px solid var(--blue)'}}>
+        <strong>Triple-win vision:</strong> {st.vision.slice(0,200)}{st.vision.length>200?'…':''}
+      </div>}
+      <div className="divl"/>
+      <div className="g2">
+        <div className="fld"><label>Currency</label><select value={cur} onChange={e=>upd('curr',e.target.value)}>{CURR.map(c=><option key={c}>{c}</option>)}</select></div>
+        <div className="fld"><label>CAPEX / upfront investment ({cur})</label><input type="number" value={st.capex} onChange={e=>upd('capex',e.target.value)} placeholder="0 if none" min="0"/><div className="fld-hint">Leave blank if no upfront investment required</div></div>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>Discount rate (WACC) — {st.rate}%</label>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'0.35rem'}}>
+          <input type="range" min="2" max="20" step="1" value={st.rate} onChange={e=>upd('rate',+e.target.value)} style={{flex:1}}/>
+          <span style={{fontSize:'0.82rem',fontWeight:500,color:'var(--blue)',minWidth:35}}>{st.rate}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div className="card">
+      <div className="ey">Stakeholder benefit lines</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Quantify each opportunity</h2>
+      <p className="csub">For each active stakeholder from Step 3, enter the estimated annual financial value. These become the NPV+ waterfall lines.</p>
+      <div className="divl"/>
+      {actv.length===0&&<div style={{textAlign:'center',padding:'2rem',color:'#aaa',fontSize:'0.85rem'}}>No stakeholders activated in Step 3. Go back and activate at least one.</div>}
+      {actv.map(s=>{
+        const tp=STYPES.find(t=>t.id===s.id),ann=parseFloat(s.annual)||0,contrib=ann*afV;
+        return<div key={s.id} className="nl">
+          <div className="nl-hd">
+            <div className="nl-left">
+              <div className="nl-badge" style={{background:tp.light}}>{tp.icon}</div>
+              <div><div className="nl-nm" style={{color:tp.mid}}>{tp.label}</div><div className="nl-sub">{ann>0?`${fmt(ann,cur)}/year`:'Enter annual benefit below'}</div></div>
+            </div>
+            {ann>0&&<div className="nl-val" style={{color:tp.mid}}>{fmt(contrib,cur)}<span style={{fontSize:'0.7rem',fontWeight:400,color:'#999',marginLeft:4}}>NPV @ {vh}yr</span></div>}
+          </div>
+          <div className="nl-body">
+            <div className="fld" style={{marginTop:'0.75rem'}}><label>Benefit description</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label — e.g. EU Carbon tax savings, Recycling margin…'}/></div>
+            <div className="g2">
+              <div className="fld" style={{marginBottom:0}}>
+                <label>Annual benefit ({cur})</label>
+                <input type="number" value={s.annual} onChange={e=>usth(s.id,'annual',e.target.value)} placeholder="e.g. 500000" min="0"/>
+                <div className="fld-hint">Steady-state annual value once implemented</div>
+              </div>
+              <div className="fld" style={{marginBottom:0}}>
+                <label>NPV contribution @ {vh}yr</label>
+                <div style={{padding:'0.56rem 0.8rem',background:'var(--cream-d)',borderRadius:'var(--r)',fontSize:'0.875rem',fontWeight:500,color:ann>0?tp.mid:'#ccc',border:'1px solid var(--border)'}}>{ann>0?`${fmt(contrib,cur)}`:'—'}</div>
+                <div className="fld-hint">WACC {st.rate}% · {vh}-year horizon</div>
+              </div>
+            </div>
+          </div>
+        </div>;
+      })}
+    </div>
+
+    <div className="wf">
+      <div className="wf-hd">
+        <div className="wf-ttl">NPV+ Waterfall</div>
+        <div className="htabs">{[5,10].map(h=><button key={h} className={`htab ${vh===h?'on':''}`} onClick={()=>setVh(h)}>{h}-year</button>)}</div>
+      </div>
+      <Waterfall sth={actv} capex={st.capex} rate={st.rate} horizon={vh} curr={cur}/>
+      <div className="npv3">
+        <div className="npv3b"><div className="npv3l">Annual net benefit</div><div className={`npv3v ${totalAnn>0?'pos':''}`}>{fmt(totalAnn,cur)}</div></div>
+        <div className="npv3b"><div className="npv3l">NPV+ at 5 years</div><div className={`npv3v ${npv5>0?'pos':'neg'}`}>{fmt(npv5,cur)}</div></div>
+        <div className="npv3b"><div className="npv3l">NPV+ at 10 years</div><div className="npv3v gld">{fmt(npv10,cur)}</div></div>
+      </div>
+      <div style={{marginTop:'0.875rem',fontSize:'0.7rem',color:'rgba(255,255,255,0.22)',textAlign:'center'}}>NPV+ = −CAPEX + Σ (annual benefit × annuity factor) · WACC {st.rate}% · steady-state from year 1</div>
+    </div>
+
+    <div className="card">
+      <div className="ey">The pitch</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Present to your CFO or investor</h2>
+      <p className="csub">Walk through the waterfall. Justify each benefit line. Is this a 5-year or 10-year story? What are the key risks and assumptions?</p>
+      <div className="divl"/>
+      <div className="fld" style={{marginBottom:0}}><textarea value={st.pitch} onChange={e=>upd('pitch',e.target.value)} placeholder="Explain the assumptions. For each stakeholder benefit: what drives it, how confident are you, what market share or regulatory assumption underpins it? What must happen for the project to reach positive NPV? How does this connect to your triple-win vision?" style={{minHeight:130}}/></div>
+    </div>
+
+    <AIChat
+      stageLabel="NPV+ Valuation"
+      systemPrompt={sysPrompt}
+      buildPrompt={buildPrompt}
+      onUpdate={m=>set(s=>({...s,chats:{...s.chats,s5:m}}))}
+      initialMsgs={st.chats?.s5}
+      regenUsed={!!st.chatRegenUsed?.s5}
+      onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),s5:true}}))}
+    />
+  </div>;
+}
+
+/* ─── AI CONSULTANT EXTENDED ─── */
+function AIConsultantExt({st,initialReport,onReportChange,regenUsed,onRegenUsed}){
+  const [state,setState]=useState(initialReport?'done':'idle');
+  const [report,setReport]=useState(initialReport||'');
+  const [error,setError]=useState('');
+
+  const generate=async()=>{
+    setState('loading');
+    const sysPrompt=`SCOPE GUARDRAIL: Scoped exclusively to challenges with a meaningful ESG dimension. If the challenge lacks a genuine sustainability angle, politely decline.
+
+You are a senior strategy advisor — part McKinsey partner, part impact investor — helping an executive education group turn their extended sustainability analysis into a concrete business plan. You have access to web search to ground your advice in real market context.
+
+This group completed an EXTENDED analysis: market structure, industry sustainability track record, stakeholder mapping, strategic lever deep-dive with sub-questions, and NPV+ modelling. Use all of this rich context throughout your brief.
+
+CRITICAL: You will be given AI COACHING INSIGHTS from 5 analysis stages. Treat these as senior colleague notes. Where coaching raised a challenge the group has not addressed in their inputs, name it explicitly and resolve it in your advice. Do not merely acknowledge coaching — weave it into the substance of your four sections.
+
+Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>. No markdown, no preamble, no sign-off — output inner HTML only, starting directly with content.
+
+Four sections (use <h3>):
+## The Opportunity Reframe
+3–5 sentences: sharpen or reframe the opportunity using current market intelligence, specifically informed by the market context and track record the group provided. What is the real prize? Ground this in a specific regulatory shift, competitive dynamic, or emerging trend — cite a real data point from your web search.
+
+## Business Model Fit
+4–6 sentences: recommend the most appropriate business model archetype for the chosen lever(s) and competitive advantages identified. Explain why this fits the stakeholder and financial dynamics. Name one or two real companies that have used this model for a comparable challenge. Reference the competitive gaps identified in the sub-questions.
+
+## Implementation Path
+Three phases with 2–3 sentences each:
+- **Year 0–1 (Pilot):** the single most important first move; key partnerships or customers to target; what success looks like at 12 months.
+- **Year 1–3 (Build):** capabilities and ecosystem relationships to build; milestone that signals readiness to scale.
+- **Year 3+ (Scale):** market or regulatory trigger; how the model evolves at scale; realistic revenue or impact ambition.
+
+## Make-or-Break Factor
+2–3 sentences: the single most critical assumption — name the specific variable, explain why it is pivotal, and suggest one concrete way to de-risk or test it early. Ground this in the investment requirements and competitive gaps identified.
+
+OUTPUT DISCIPLINE: Write all four sections in full. Do not add preamble, caveats, or sign-off. Start directly with ## The Opportunity Reframe.`;
+
+    const c=(s,n)=>(s||'').slice(0,n);
+    const linfo=LEVERS_EXT.find(l=>l.id===st.lever);
+    const activeSth=st.sth.filter(x=>x.on);
+    const cap=parseFloat(st.capex)||0;
+    const lines=activeSth.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+    const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
+    const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
+    const sthText=lines.map(s=>{const tp=STYPES.find(x=>x.id===s.id);return`${tp.label}: ${c(s.opp,100)}`;}).join(' | ');
+    let leverDetail='Not selected';
+    if(st.lever==='cost')leverDetail=`Cost Reduction: immediacy="${c(st.costData.i,150)}" | triple-win="${c(st.costData.ii,150)}" | advantages="${c(st.costData.iii,150)}" | investments="${c(st.costData.iv,150)}"`;
+    else if(st.lever==='wtp')leverDetail=`WTP Creation: segment="${c(st.wtpData.i,150)}" | triple-win="${c(st.wtpData.ii,150)}" | advantages="${c(st.wtpData.iii,150)}" | investments="${c(st.wtpData.iv,150)}"`;
+    else if(st.lever==='mktEx')leverDetail=`New Customers: reason="${c(st.mktExData.i,150)}" | triple-win="${c(st.mktExData.ii,150)}" | advantages="${c(st.mktExData.iii,150)}" | investments="${c(st.mktExData.iv,150)}"`;
+    else if(st.lever==='mktNew')leverDetail=`New Market: need="${c(st.mktNewData.i,150)}" | triple-win="${c(st.mktNewData.ii,150)}" | advantages="${c(st.mktNewData.iii,150)}" | investments="${c(st.mktNewData.iv,150)}"`;
+    else if(st.lever==='combo'){
+      const parts=[];
+      if(st.comboLevers.includes('cost'))parts.push(`Cost: adv="${c(st.costData.iii,120)}" inv="${c(st.costData.iv,120)}"`);
+      if(st.comboLevers.includes('wtp'))parts.push(`WTP: seg="${c(st.wtpData.i,120)}" adv="${c(st.wtpData.iii,120)}"`);
+      if(st.comboLevers.includes('mktEx'))parts.push(`NewCust: "${c(st.mktExData.i,120)}"`);
+      if(st.comboLevers.includes('mktNew'))parts.push(`NewMkt: "${c(st.mktNewData.i,120)}"`);
+      leverDetail=`Combination (${st.comboLevers.join('+')}):\n${parts.join(' | ')}\nAdditional wins: "${c(st.comboAdditional,200)}"`;
+    }
+    const digest=coachingDigestExt(st.chats||{});
+    const prompt=`Produce a Strategic Advisor Brief for this extended analysis.
+
+COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'not specified'}
+CHALLENGE: ${st.fish.name||'—'}
+${c(st.fish.desc,300)}
+
+MARKET CONTEXT: market="${c(st.mktCtx.a,180)}" | cost pressure="${c(st.mktCtx.b,130)}" | price pressure="${c(st.mktCtx.c,130)}" | growth="${c(st.mktCtx.d,130)}" | regulation="${c(st.mktCtx.e,130)}" | profit outlook="${c(st.mktCtx.f,130)}"
+
+INDUSTRY TRACK RECORD: successes="${c(st.track.a,200)}" | failure reasons="${c(st.track.b,200)}" | key lessons="${c(st.track.c,200)}"
+
+TRIPLE-WIN VISION: ${c(st.vision,300)||'—'}
+
+STRATEGIC LEVER: ${linfo?.label||'Not selected'}
+${leverDetail}
+
+KEY STAKEHOLDER OPPORTUNITIES: ${sthText||'Not completed'}
+
+FINANCIAL MODEL (WACC ${st.rate}%): CAPEX ${cap>0?fmt(-cap,st.curr):'none'} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}
+CFO pitch: ${c(st.pitch,200)}
+${digest?`\n===AI COACHING INSIGHTS (5 stages — MUST be incorporated)===\n${digest}\n===END COACHING INSIGHTS===\n`:'(No coaching insights recorded.)'}
+
+Use web search for current market context. Write the four-section Strategic Advisor Brief.`;
+
+    try{
+      let data,resp;
+      const RETRIES=3;
+      for(let attempt=0;attempt<RETRIES;attempt++){
+        resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:5200,system:sysPrompt,tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
+        });
+        data=await resp.json();
+        if((resp.status===429||resp.status===529)&&attempt<RETRIES-1){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
+        break;
+      }
+      if(!resp.ok)throw new Error(`HTTP ${resp.status}: ${data.error?.message||JSON.stringify(data)}`);
+      const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n\n');
+      if(!text)throw new Error('No text in response');
+      setReport(text);setState('done');if(onReportChange)onReportChange(text);
+    }catch(e){setError(e.message);setState('error');}
+  };
+
+  const toHtml=text=>text.replace(/^##\s+(.*)$/gm,'<h3>$1</h3>').replace(/^[-•]\s+(.*)$/gm,'<li>$1</li>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+
+  return(
+    <div className="card" style={{marginBottom:'1.5rem',padding:0,overflow:'hidden'}}>
+      <div style={{background:'var(--navy)',padding:'1.25rem 1.75rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.75rem'}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{width:36,height:36,background:'var(--gold)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <svg width="18" height="18" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="19.5" stroke="#002A5C" strokeWidth="2.5"/><ellipse cx="22" cy="22" rx="19.5" ry="8" stroke="#002A5C" strokeWidth="1.8"/><line x1="2.5" y1="22" x2="41.5" y2="22" stroke="#002A5C" strokeWidth="1.8"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:'0.95rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>Strategic Advisor Brief</div>
+            <div style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.5)',marginTop:2}}>Extended analysis · powered by live web research</div>
+          </div>
+        </div>
+        {state==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={generate}>✦ Get Advisor Brief</button>}
+        {state==='done'&&<div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+          <span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10}}>✓ Brief complete</span>
+          {!regenUsed&&<button className="btn btn-s" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setState('idle');setReport('');if(onReportChange)onReportChange('');if(onRegenUsed)onRegenUsed();}}>↺ Regenerate</button>}
+        </div>}
+      </div>
+      {state==='idle'&&<div style={{padding:'1.25rem 1.75rem',fontSize:'0.85rem',lineHeight:1.6}}>
+        <p style={{color:'#666',marginBottom:'0.75rem'}}>An independent senior advisor will review your complete extended analysis — market context, track record, lever deep-dive, stakeholders, and NPV+ — and produce a business model recommendation grounded in live market research.</p>
+        <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.65rem 0.9rem',color:'#5A4000',fontSize:'0.8rem'}}>
+          <strong>⚠ Before you generate:</strong> make sure all inputs across steps 1–5 are complete. You have one opportunity to regenerate — save it for genuine revisions.
+        </div>
+      </div>}
+      {state==='loading'&&<AIThinking messages={['Searching for market context…','Reviewing track record lessons…','Analysing lever choice and sub-questions…','Identifying business model analogues…','Mapping the implementation path…','Finalising the advisor brief…']}/>}
+      {state==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Error: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={generate}>Retry</button></div>}
+      {state==='done'&&<>
+        <div className="report-body" style={{borderTop:'1px solid var(--border)'}} dangerouslySetInnerHTML={{__html:toHtml(report)}}/>
+        <div style={{padding:'0.6rem 1.75rem 1rem',fontSize:'0.7rem',color:'#bbb'}}>Generated using live web research. Intended to complement your group's analysis — always apply your own judgement.</div>
+      </>}
+    </div>
+  );
+}
+
+/* ─── CFO REPORT EXTENDED ─── */
+function CFOReportExt({st,initialHtml,onHtmlChange,regenUsed,onRegenUsed}){
+  const [html,setHtml]=useState(initialHtml||'');
+  const [genState,setGenState]=useState(initialHtml?'done':'idle');
+  const [error,setError]=useState('');
+
+  const activeSth=st.sth.filter(x=>x.on);
+  const cap=parseFloat(st.capex)||0;
+  const lines=activeSth.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
+  const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
+  const totAnn=lines.reduce((a,x)=>a+x.ann,0);
+  const linfo=LEVERS_EXT.find(l=>l.id===st.lever);
+
+  const runGenerate=()=>{
+    setGenState('loading');
+    const system=`You are a senior management consultant writing a formal CFO-ready executive memo for an executive education group presenting an extended sustainability strategy. Write in crisp, investment-grade style. Format output as clean HTML using only: <h3>, <p>, <ul>, <li>, <strong>, <table>, <tr>, <th>, <td>, and one class="highlight-box" div for the executive summary. No markdown, no preamble, no sign-off — output inner HTML only.
+
+CRITICAL OUTPUT DISCIPLINE: You have a hard token budget. All seven sections must be present and complete. Write each section tightly — 2–4 sentences of prose or a short table. Do NOT expand any section at the expense of later ones. Pace yourself evenly. It is far better to be concise and deliver all seven sections than to be detailed in sections 1–3 and leave sections 4–7 incomplete. The memo must always end with a complete "Next Steps" section.`;
+
+    const c=(s,n)=>(s||'').slice(0,n);
+    const sthText=activeSth.map(t=>{const tp=STYPES.find(x=>x.id===t.id);return`${tp.label}: Who: ${c(t.who,100)} | Pressure: ${c(t.pressure,100)} | Impact: ${c(t.impact,100)} | Opportunity: ${c(t.opp,100)}`;}).join('\n');
+    const valText=lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return`${tp.label}: ${l.blabel||l.opp?.slice(0,50)||'benefit'} — ${fmt(l.ann,st.curr)}/year → NPV@5yr: ${fmt(l.ann*af(st.rate,5),st.curr)}, @10yr: ${fmt(l.ann*af(st.rate,10),st.curr)}`;}).join('\n');
+    let leverSummary='';
+    if(st.lever==='cost')leverSummary=`Cost Reduction: immediacy="${c(st.costData.i,150)}" | triple-win="${c(st.costData.ii,150)}" | advantages="${c(st.costData.iii,150)}" | investments="${c(st.costData.iv,150)}"`;
+    else if(st.lever==='wtp')leverSummary=`WTP Creation: segment="${c(st.wtpData.i,150)}" | triple-win="${c(st.wtpData.ii,150)}" | advantages="${c(st.wtpData.iii,150)}" | investments="${c(st.wtpData.iv,150)}"`;
+    else if(st.lever==='mktEx')leverSummary=`New Customers: reason="${c(st.mktExData.i,150)}" | triple-win="${c(st.mktExData.ii,150)}" | advantages="${c(st.mktExData.iii,150)}" | investments="${c(st.mktExData.iv,150)}"`;
+    else if(st.lever==='mktNew')leverSummary=`New Market: need="${c(st.mktNewData.i,150)}" | triple-win="${c(st.mktNewData.ii,150)}" | advantages="${c(st.mktNewData.iii,150)}" | investments="${c(st.mktNewData.iv,150)}"`;
+    else if(st.lever==='combo'){
+      const parts=[];
+      if(st.comboLevers.includes('cost'))parts.push(`Cost: adv="${c(st.costData.iii,120)}" inv="${c(st.costData.iv,100)}"`);
+      if(st.comboLevers.includes('wtp'))parts.push(`WTP: seg="${c(st.wtpData.i,100)}" adv="${c(st.wtpData.iii,100)}"`);
+      if(st.comboLevers.includes('mktEx'))parts.push(`NewCust: "${c(st.mktExData.i,100)}"`);
+      if(st.comboLevers.includes('mktNew'))parts.push(`NewMkt: "${c(st.mktNewData.i,100)}"`);
+      leverSummary=`Combination (${st.comboLevers.join('+')}):\n${parts.join(' | ')}\nAdditional wins: "${c(st.comboAdditional,180)}"`;
+    }
+    const digest=coachingDigestExt(st.chats||{});
+    const digestSection=digest?`\nAI COACHING INSIGHTS FROM ALL 5 STAGES (incorporate where relevant):\n${digest}\n`:'';
+
+    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${c(st.fish.desc,400)}\n\nMARKET CONTEXT:\n- Market/segment: ${c(st.mktCtx.a,150)}\n- Cost pressure: ${c(st.mktCtx.b,120)}\n- Price pressure: ${c(st.mktCtx.c,120)}\n- Growth outlook: ${c(st.mktCtx.d,120)}\n- Regulatory impact: ${c(st.mktCtx.e,120)}\n- Profit outlook: ${c(st.mktCtx.f,120)}\n\nINDUSTRY TRACK RECORD:\n- Successes: ${c(st.track.a,180)}\n- Failure reasons: ${c(st.track.b,180)}\n- Key lessons: ${c(st.track.c,180)}\n\nTRIPLE-WIN VISION: ${c(st.vision,300)||'—'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${leverSummary}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${c(st.pitch,250)}\n${digestSection}\nStructure the memo with exactly these seven sections, each tight and complete:\n(1) Executive summary highlight-box: one-paragraph recommendation + NPV headline + triple-win summary.\n(2) Strategic materiality: why this challenge is urgent now given the market context (2–3 sentences).\n(3) Stakeholder landscape: one sentence per relevant stakeholder group.\n(4) Strategic recommendation: the chosen lever, triple-win logic, competitive advantages (3 sentences max).\n(5) Financial case: NPV+ waterfall table then 2 sentences on key assumptions.\n(6) Risks and mitigants: 3 bullet points maximum, informed by track record lessons.\n(7) Next steps: 3 bullet points with suggested owners.\nComplete all seven sections.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
+
+    callClaude(system,[{role:'user',content:prompt}],6000,'claude-sonnet-4-6')
+      .then(text=>{setHtml(text);setGenState('done');if(onHtmlChange)onHtmlChange(text);})
+      .catch(e=>{setError(e.message);setGenState('error');});
+  };
+
+  const openPrint=()=>{
+    const win=window.open('','_blank');
+    const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>CFO Report — ${(st.fish.name||'Sustainability Strategy').replace(/</g,'&lt;')}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+@page{margin:2cm 2.5cm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;font-size:10pt;line-height:1.72;color:#1A1A1A;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover{background:#002A5C;color:white;padding:2.5rem 3rem 2rem;-webkit-print-color-adjust:exact;print-color-adjust:exact;page-break-after:avoid}
+.cover-eyebrow{font-size:7.5pt;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.6rem}
+.cover-title{font-family:'Playfair Display',Georgia,serif;font-size:19pt;font-weight:700;line-height:1.2;color:#fff;margin-bottom:0.25rem}
+.cover-subtitle{font-family:'Playfair Display',Georgia,serif;font-size:11pt;color:rgba(255,255,255,0.55);margin-bottom:1.1rem;font-weight:600}
+.cover-rule{height:3px;background:#C9A84C;width:56px;margin:1rem 0 1.1rem;border-radius:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-meta{font-size:8.5pt;color:rgba(255,255,255,0.55);line-height:1.9}
+.cover-meta strong{color:rgba(255,255,255,0.85);font-weight:600}
+.ai-badge{display:inline-block;background:rgba(74,171,232,0.2);border:1px solid rgba(74,171,232,0.5);border-radius:20px;padding:2px 10px;font-size:7.5pt;color:rgba(255,255,255,0.7);margin-top:0.5rem}
+.ext-badge{display:inline-block;background:rgba(107,33,168,0.3);border:1px solid rgba(107,33,168,0.5);border-radius:20px;padding:2px 10px;font-size:7.5pt;color:rgba(255,255,255,0.7);margin-top:0.3rem;margin-left:6px}
+.body-wrap{padding:2.25rem 3rem}
+h3{font-family:'Playfair Display',Georgia,serif;font-size:11pt;color:#002A5C;margin:1.75rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:2px solid #4AABE8;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+h3:first-child{margin-top:0}
+p{margin-bottom:0.75rem;font-size:10pt}
+ul,ol{padding-left:1.4rem;margin-bottom:0.75rem}
+li{margin-bottom:0.28rem;font-size:10pt}
+strong{color:#002A5C;font-weight:600}
+.highlight-box{background:#EEF6FB;border-left:4px solid #4AABE8;padding:0.9rem 1.1rem;margin:0.5rem 0 1.2rem;border-radius:0 4px 4px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:9pt}
+th{background:#002A5C;color:white;padding:0.45rem 0.7rem;text-align:left;font-weight:600;font-size:8.5pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+td{padding:0.4rem 0.7rem;border-bottom:1px solid #D5E6F5;font-size:9.5pt}
+tr:nth-child(even) td{background:#F3F8FC;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.doc-footer{margin-top:2.5rem;padding-top:0.65rem;border-top:1px solid #C0D8EE;display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:#aaa}
+.doc-footer-brand{color:#002A5C;font-weight:600;font-size:8pt}
+</style></head><body>
+<div class="cover">
+  <div class="cover-eyebrow">Sustainability Strategy Compass · Extended Analysis · Executive Report</div>
+  <div class="cover-title">${(st.fish.name||'Sustainability Strategy Opportunity').replace(/</g,'&lt;')}</div>
+  <div class="cover-subtitle">CFO-Ready Investment Memo</div>
+  <div class="cover-rule"></div>
+  <div class="cover-meta">
+    <strong>Group:</strong> ${(st.grp.name||'Executive Team').replace(/</g,'&lt;')}<br>
+    ${st.grp.industry?`<strong>Industry:</strong> ${st.grp.industry.replace(/</g,'&lt;')}<br>`:''}
+    ${st.grp.members?`<strong>Members:</strong> ${st.grp.members.replace(/</g,'&lt;')}<br>`:''}
+    <strong>Date:</strong> ${date}<br>
+    <span class="ai-badge">✦ Extended Analysis</span><span class="ext-badge">⬡ 5-Stage AI Coaching</span>
+  </div>
+</div>
+<div class="body-wrap">
+${html}
+<div class="doc-footer">
+  <span class="doc-footer-brand">© AcpitConsulting · Sustainability Strategy Compass — Extended</span>
+  <span>${date}</span>
+</div>
+</div>
+</body></html>`);
+    win.document.close();win.focus();setTimeout(()=>win.print(),800);
+  };
+
+  return(
+    <div className="card" style={{marginBottom:'1.5rem',padding:0,overflow:'hidden'}}>
+      <div style={{background:'var(--navy)',padding:'1.25rem 1.75rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.75rem'}}>
+        <div>
+          <div style={{fontSize:'0.95rem',fontWeight:600,color:'white',fontFamily:"'Playfair Display',serif"}}>AI CFO Report</div>
+          <div style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.5)',marginTop:2}}>Extended analysis · AI-augmented investment-grade executive memo</div>
+        </div>
+        <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+          {genState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.82rem'}} onClick={runGenerate}>✦ Generate CFO Report</button>}
+          {genState==='done'&&<button className="btn btn-p no-print" style={{fontSize:'0.82rem'}} onClick={openPrint}>Print / Export PDF</button>}
+          {genState==='done'&&!regenUsed&&<button className="btn btn-s no-print" style={{fontSize:'0.75rem',padding:'0.25rem 0.75rem'}} onClick={()=>{setGenState('idle');setHtml('');if(onHtmlChange)onHtmlChange('');if(onRegenUsed)onRegenUsed();}}>↺ Regenerate</button>}
+          {genState==='done'&&<span style={{fontSize:'0.65rem',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',padding:'3px 10px',borderRadius:10,alignSelf:'center'}}>✓ Generated</span>}
+        </div>
+      </div>
+      {genState==='idle'&&<div style={{padding:'1.25rem 1.75rem',fontSize:'0.85rem',lineHeight:1.6}}>
+        <p style={{color:'#666',marginBottom:'0.75rem'}}>Generate a professional CFO-ready executive memo synthesising your full extended analysis — market context, track record, strategic lever deep-dive, stakeholders, NPV+, and all AI coaching insights.</p>
+        <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.65rem 0.9rem',color:'#5A4000',fontSize:'0.8rem'}}>
+          <strong>⚠ Before you generate:</strong> confirm all inputs across steps 1–5 are finalised and you have reviewed the Advisor Brief above. You have one opportunity to regenerate.
+        </div>
+      </div>}
+      {genState==='loading'&&<AIThinking messages={['Reading market context and track record…','Reviewing stakeholder analysis…','Processing strategic lever sub-questions…','Modelling the financial scenarios…','Incorporating AI coaching insights…','Structuring the executive memo…','Drafting risks and mitigants…','Writing next steps…','Finalising the report…']}/>}
+      {genState==='error'&&<div style={{padding:'1.25rem 1.75rem',color:'#c33',fontSize:'0.85rem'}}>Generation failed: {error} <button style={{marginLeft:8,background:'none',border:'none',color:'var(--blue)',cursor:'pointer',fontFamily:'inherit',fontSize:'0.85rem',textDecoration:'underline'}} onClick={runGenerate}>Retry</button></div>}
+      {genState==='done'&&<div className="report-body" style={{borderTop:'1px solid var(--border)'}} dangerouslySetInnerHTML={{__html:html}}/>}
+    </div>
+  );
+}
+
+/* ─── STEP 6 · SUMMARY & REPORT ─── */
+function S6({st,set}){
+  const [submitted,setSubmitted]=useState(false);
+  const [submitting,setSubmitting]=useState(false);
+  const [submitErr,setSubmitErr]=useState('');
+
+  const {grp,fish,sth,curr,capex,rate,pitch,vision,lever}=st;
+  const actv=sth.filter(x=>x.on);
+  const cap=parseFloat(capex)||0;
+  const lines=actv.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,5),0);
+  const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,10),0);
+  const totAnn=lines.reduce((a,x)=>a+x.ann,0);
+  const linfo=LEVERS_EXT.find(l=>l.id===lever);
+
+  const submitToInstructor=async()=>{
+    setSubmitting(true);setSubmitErr('');
+    try{
+      const resp=await fetch('/api/submit',{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          version:'extended',
+          groupName:grp.name||'',members:st.grp.members||'',industry:grp.industry||'',
+          challengeName:fish.name||'',challengeDesc:fish.desc||'',
+          mktCtx:st.mktCtx,track:st.track,
+          vision:st.vision||'',lever:st.lever||'',
+          costData:st.costData,wtpData:st.wtpData,
+          mktExData:st.mktExData,mktNewData:st.mktNewData,
+          comboLevers:st.comboLevers||[],comboAdditional:st.comboAdditional||'',
+          stakeholders:actv,benefitLines:lines,
+          npv5,npv10,capex:cap,rate:parseFloat(rate)||0,currency:curr,pitch:st.pitch||'',
+          consultantHtml:st.consultantReport||'',reportHtml:st.cfoHtml||'',
+        })
+      });
+      if(!resp.ok)throw new Error('Server error '+resp.status);
+      setSubmitted(true);
+    }catch(e){setSubmitErr(e.message);}
+    setSubmitting(false);
+  };
+
+  /* helper: render lever sub-questions in summary */
+  const SubQGrid=({fields,data})=>(
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem',marginTop:'0.875rem'}}>
+      {fields.map(f=>{
+        const shortLabel=f.label.includes('—')?f.label.split('—').slice(1).join('—').trim():f.label;
+        return<div key={f.key}>
+          <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{shortLabel}</div>
+          <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{data[f.key]||<em style={{color:'#ccc'}}>—</em>}</div>
+        </div>;
+      })}
+    </div>
+  );
+
+  const LeverSummary=()=>{
+    if(!linfo)return<em style={{color:'#ccc'}}>Not selected</em>;
+    const badge=<span style={{display:'inline-block',padding:'0.28rem 0.85rem',borderRadius:20,fontSize:'0.79rem',fontWeight:500,background:linfo.bg,color:linfo.tc,marginBottom:'0.875rem'}}>{linfo.label}</span>;
+    const comboSub=id=>{
+      if(!st.comboLevers.includes(id))return null;
+      const map={cost:['Cost Reduction','#B45309',COST_FIELDS,st.costData],wtp:['WTP Creation','#2D6A4F',WTP_FIELDS,st.wtpData],mktEx:['New Customers','#1565C0',MKT_EX_FIELDS,st.mktExData],mktNew:['New Market','#6B21A8',MKT_NEW_FIELDS,st.mktNewData]};
+      const [label,color,fields,data]=map[id];
+      return<div key={id} style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
+        <div style={{fontSize:'0.75rem',fontWeight:600,color:color,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:'0.5rem'}}>{label}</div>
+        <SubQGrid fields={fields} data={data}/>
+      </div>;
+    };
+    return<div>
+      {badge}
+      {lever==='cost'&&<SubQGrid fields={COST_FIELDS} data={st.costData}/>}
+      {lever==='wtp'&&<SubQGrid fields={WTP_FIELDS} data={st.wtpData}/>}
+      {lever==='mktEx'&&<SubQGrid fields={MKT_EX_FIELDS} data={st.mktExData}/>}
+      {lever==='mktNew'&&<SubQGrid fields={MKT_NEW_FIELDS} data={st.mktNewData}/>}
+      {lever==='combo'&&<>
+        <div style={{fontSize:'0.79rem',color:'#666',marginBottom:'0.5rem'}}>Levers combined: {st.comboLevers.map(id=>LEVERS_EXT.find(l=>l.id===id)?.label).join(', ')||'—'}</div>
+        {['cost','wtp','mktEx','mktNew'].map(comboSub)}
+        {st.comboAdditional&&<div style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>Additional combined wins (2d.ii)</div>
+          <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{st.comboAdditional}</div>
+        </div>}
+      </>}
+    </div>;
+  };
+
+  const SumRow=({label,value})=>(
+    <div style={{marginBottom:'0.5rem'}}>
+      <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{label}</div>
+      <div style={{fontSize:'0.84rem',lineHeight:1.55,color:'#1A1A1A'}}>{value||<em style={{color:'#ccc'}}>—</em>}</div>
+    </div>
+  );
+
+  return<div>
+    {/* ── Header ── */}
+    <div className="card" style={{marginBottom:'1.5rem'}}>
+      <div className="ey">Complete output</div>
+      <h2 className="ctitle">Group Summary</h2>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'1rem',marginTop:'0.5rem'}}>
+        <div>
+          <div style={{fontSize:'1rem',fontWeight:500}}>{grp.name||'Unnamed group'}</div>
+          {grp.industry&&<div style={{fontSize:'0.82rem',color:'#666'}}>{grp.industry}</div>}
+          {grp.members&&<div style={{fontSize:'0.78rem',color:'#999',marginTop:3}}>{grp.members}</div>}
+        </div>
+        <button className="btn btn-s no-print" onClick={()=>window.print()}>Print summary</button>
+      </div>
+      {fish.name&&<div style={{marginTop:'1.25rem',background:'var(--blue-l)',borderRadius:'var(--r)',padding:'1rem 1.25rem',borderLeft:'4px solid var(--blue)'}}>
+        <div style={{fontSize:'0.67rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--blue)',marginBottom:'0.3rem'}}>Challenge</div>
+        <div style={{fontSize:'1.05rem',fontWeight:600,color:'var(--navy)',fontFamily:"'Playfair Display',serif"}}>{fish.name}</div>
+        {fish.desc&&<div style={{fontSize:'0.83rem',color:'#555',marginTop:'0.3rem'}}>{fish.desc}</div>}
+      </div>}
+    </div>
+
+    {/* ── Market Context ── */}
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Section 1</div><h3>Market Context</h3></div></div>
+      <div className="sum-sec-body">
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+          {[['1a. Market/segment & location',st.mktCtx.a],['1b. Cost pressure',st.mktCtx.b],['1c. Price pressure',st.mktCtx.c],['1d. Growth outlook',st.mktCtx.d],['1e. Regulatory impact',st.mktCtx.e],['1f. Profit outlook',st.mktCtx.f]].map(([l,v])=>(
+            <SumRow key={l} label={l} value={v}/>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* ── Track Record ── */}
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Section 2</div><h3>Industry Sustainability Track Record</h3></div></div>
+      <div className="sum-sec-body">
+        <SumRow label="2a. Sustainability successes & why" value={st.track.a}/>
+        <SumRow label="2b. Why initiatives failed" value={st.track.b}/>
+        <SumRow label="2c. Key findings for success" value={st.track.c}/>
+      </div>
+    </div>
+
+    {/* ── Stakeholders ── */}
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Step 3</div><h3>Stakeholder Analysis</h3></div></div>
+      {actv.length===0&&<div className="sum-sec-body" style={{color:'#aaa',fontSize:'0.85rem'}}>Not completed.</div>}
+      {actv.map((s,i)=>{
+        const tp=STYPES.find(t=>t.id===s.id);
+        return<div key={s.id} className="sum-sec-body" style={{borderBottom:i<actv.length-1?'1px solid var(--border)':0}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'0.22rem 0.7rem',borderRadius:20,fontSize:'0.77rem',fontWeight:500,background:tp.light,color:tp.mid,marginBottom:'0.875rem'}}>{tp.icon} {tp.label}</span>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+            {[['Who',s.who],['Pressure',s.pressure],['Business impact',s.impact],['Opportunity',s.opp]].map(([l,v])=>(
+              <SumRow key={l} label={l} value={v}/>
+            ))}
+          </div>
+        </div>;
+      })}
+    </div>
+
+    {/* ── Strategic Opportunity ── */}
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Step 4</div><h3>Strategic Opportunity</h3></div></div>
+      <div className="sum-sec-body">
+        {vision&&<div style={{marginBottom:'1.25rem',background:'linear-gradient(135deg,var(--navy-d) 0%,#003566 100%)',borderRadius:'var(--r)',padding:'1rem 1.25rem',borderLeft:'3px solid var(--gold)'}}>
+          <div style={{fontSize:'0.65rem',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'0.35rem'}}>Triple-Win Vision</div>
+          <div style={{fontSize:'0.88rem',color:'rgba(255,255,255,0.88)',lineHeight:1.65}}>{vision}</div>
+        </div>}
+        <LeverSummary/>
+      </div>
+    </div>
+
+    {/* ── NPV+ ── */}
+    <div className="sum-sec">
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Step 5</div><h3>NPV+ Valuation</h3></div></div>
+      <div className="sum-sec-body">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'0.875rem',marginBottom:'1.5rem'}}>
+          {[['Annual net benefit',totAnn,totAnn>0],['NPV+ at 5 years',npv5,npv5>0],['NPV+ at 10 years',npv10,npv10>0]].map(([l,v,pos])=>(
+            <div key={l} style={{background:'var(--cream-d)',borderRadius:'var(--r)',padding:'0.875rem',textAlign:'center'}}>
+              <div style={{fontSize:'0.62rem',color:'#999',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'0.3rem'}}>{l}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:'1.1rem',fontWeight:600,color:pos?'var(--pos)':'var(--neg)'}}>{fmt(v,curr)}</div>
+            </div>
+          ))}
+        </div>
+        <table className="stbl">
+          <thead><tr><th>Stakeholder</th><th>Benefit</th><th style={{textAlign:'right'}}>Annual</th><th style={{textAlign:'right'}}>NPV 5yr</th><th style={{textAlign:'right'}}>NPV 10yr</th></tr></thead>
+          <tbody>
+            {cap>0&&<tr><td style={{color:'var(--neg)'}}>CAPEX</td><td>—</td><td style={{textAlign:'right',color:'var(--neg)',fontWeight:500}}>{fmt(-cap,curr)}</td><td style={{textAlign:'right',color:'var(--neg)'}}>{fmt(-cap,curr)}</td><td style={{textAlign:'right',color:'var(--neg)'}}>{fmt(-cap,curr)}</td></tr>}
+            {lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return<tr key={l.id}><td><span style={{fontSize:'0.8rem',color:tp.mid,fontWeight:500}}>{tp.icon} {tp.label.split(' ')[0]}</span></td><td style={{color:'#555'}}>{l.blabel||l.opp?.slice(0,40)||'—'}</td><td style={{textAlign:'right',fontWeight:500}}>{fmt(l.ann,curr)}</td><td style={{textAlign:'right',color:'var(--pos)'}}>{fmt(l.ann*af(rate,5),curr)}</td><td style={{textAlign:'right',color:'var(--pos)'}}>{fmt(l.ann*af(rate,10),curr)}</td></tr>;})}
+          </tbody>
+        </table>
+        {pitch&&<div style={{marginTop:'1.25rem'}}><div style={{fontSize:'0.68rem',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--gold-d)',marginBottom:'0.6rem'}}>CFO Pitch</div><div style={{fontSize:'0.86rem',lineHeight:1.65}}>{pitch}</div></div>}
+      </div>
+    </div>
+
+    <div style={{background:'var(--blue-l)',border:'1px solid var(--border)',borderLeft:'4px solid var(--blue)',borderRadius:'var(--r)',padding:'0.75rem 1.1rem',marginBottom:'1.5rem',fontSize:'0.82rem',color:'#334',lineHeight:1.6}}>
+      <strong>How these reports are generated:</strong> The AI Advisor Brief and CFO Report below draw on everything you entered across all five steps, including your market context, track record lessons, lever sub-questions, and any revisions made after receiving AI feedback. Finalise your inputs before generating.
+    </div>
+
+    <AIConsultantExt st={st} initialReport={st.consultantReport||''} onReportChange={r=>set(s=>({...s,consultantReport:r}))} regenUsed={!!st.consultantRegenUsed} onRegenUsed={()=>set(s=>({...s,consultantRegenUsed:true}))}/>
+    <CFOReportExt st={st} initialHtml={st.cfoHtml||''} onHtmlChange={h=>set(s=>({...s,cfoHtml:h}))} regenUsed={!!st.cfoRegenUsed} onRegenUsed={()=>set(s=>({...s,cfoRegenUsed:true}))}/>
+
+    <div style={{background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-l) 100%)',borderRadius:'var(--r-lg)',padding:'2rem',textAlign:'center',border:'1px solid rgba(74,171,232,0.3)'}}>
+      <h3 style={{color:'white',fontSize:'1.15rem'}}>Present to the CFO</h3>
+      <p style={{color:'rgba(255,255,255,0.6)',fontSize:'0.85rem',margin:'0.5rem auto 1.5rem',maxWidth:'500px'}}>
+        When you are happy with your analysis and AI-generated reports, submit your full extended presentation.
+        {!st.cfoHtml&&<span style={{display:'block',marginTop:'0.4rem',color:'rgba(252,157,157,0.8)',fontSize:'0.8rem'}}>⚠ Generate the AI CFO Report above before submitting for a complete presentation.</span>}
+      </p>
+      <button className="btn btn-p no-print" style={{fontSize:'0.9rem',padding:'0.75rem 2rem',opacity:submitted?0.6:1}} onClick={submitToInstructor} disabled={submitting||submitted}>
+        {submitted?'✓ Presented to CFO':submitting?'Submitting…':'↑ Present to CFO'}
+      </button>
+      {submitErr&&<p style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{submitErr}</p>}
+      {submitted&&<p style={{color:'rgba(255,255,255,0.5)',fontSize:'0.78rem',marginTop:'0.75rem'}}>Your extended analysis and CFO Report have been submitted. Good luck with your presentation!</p>}
+    </div>
+  </div>;
+}
+
+/* ─── APP ─── */
+function App(){
+  const DKEY=`sustcomp_ext_${window.__USERNAME__||'guest'}`;
+  const loadLocal=()=>{try{const s=localStorage.getItem(DKEY);return s?JSON.parse(s):null;}catch(e){return null;}};
+  const local=loadLocal();
+  const [step,setStep]=useState(local?.step||0);
+  const [st,set]=useState(local?.st||initExt());
+  const [saved,setSaved]=useState(false);
+
+  useEffect(()=>{try{localStorage.setItem(DKEY,JSON.stringify({step,st}));}catch(e){};},[st,step]);
+
+  useEffect(()=>{
+    fetch('/api/draft/ext').then(r=>r.json()).then(data=>{
+      if(data.state){set(data.state.st||initExt());setStep(data.state.step||0);}
+      else{set(initExt());setStep(0);try{localStorage.removeItem(DKEY);}catch(e){}}
+    }).catch(()=>{});
+  },[]);
+
+  useEffect(()=>{
+    setSaved(false);
+    fetch('/api/draft/ext',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
+      .then(()=>setSaved(true)).catch(()=>{});
+  },[step]);
+
+  useEffect(()=>{
+    const t=setTimeout(()=>{
+      fetch('/api/draft/ext',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
+        .then(()=>setSaved(true)).catch(()=>{});
+    },2000);
+    return()=>clearTimeout(t);
+  },[st]);
+
+  const LBLS=['Setup','Market Context','Track Record','Stakeholders','Strategic Opp.','NPV+','Summary'];
+  const COMPS=[S0,S1,S2,S3,S4,S5,S6];
+  const Comp=COMPS[step];
+  const NSTEPS=7;
+
+  return<div className="app">
+    <header className="hdr">
+      <div className="hdr-brand">
+        <div>
+          <div className="hdr-title">Sustainability Strategy Compass</div>
+          <div className="hdr-sub" style={{color:'rgba(255,255,255,0.4)',fontSize:'0.65rem',letterSpacing:'0.08em'}}>EXTENDED ANALYSIS</div>
+        </div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:'1.25rem'}}>
+        {(st.grp.name||st.fish.name)&&<div className="hdr-grp">{[st.grp.name,st.fish.name].filter(Boolean).join(' · ')}</div>}
+        <a href="/" style={{fontSize:'0.75rem',color:'rgba(255,255,255,0.45)',textDecoration:'none',borderLeft:'1px solid rgba(255,255,255,0.12)',paddingLeft:'1.25rem'}} onMouseOver={e=>e.target.style.color='rgba(255,255,255,0.8)'} onMouseOut={e=>e.target.style.color='rgba(255,255,255,0.45)'}>← Versions</a>
+        <a href="/logout" style={{fontSize:'0.75rem',color:'rgba(255,255,255,0.45)',textDecoration:'none'}} onMouseOver={e=>e.target.style.color='rgba(255,255,255,0.8)'} onMouseOut={e=>e.target.style.color='rgba(255,255,255,0.45)'}>Sign out</a>
+      </div>
+    </header>
+    <div className="body">
+      <SidebarExt step={step} setStep={setStep}/>
+      <main className="main"><Comp st={st} set={set}/></main>
+    </div>
+    <div className="nav no-print">
+      <button className="btn btn-s" onClick={()=>setStep(s=>s-1)} disabled={step===0}>← Back</button>
+      <div className="nav-info">Step {step+1} of {NSTEPS} · {LBLS[step]}{saved&&<span style={{marginLeft:'0.5rem',fontSize:'0.65rem',opacity:0.45}}>✓ saved</span>}</div>
+      {step<NSTEPS-1?<button className="btn btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>:<button className="btn btn-g" onClick={()=>window.print()}>Print summary</button>}
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
