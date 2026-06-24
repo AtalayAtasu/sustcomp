@@ -255,14 +255,15 @@ const STYPES = [
   {id:'inv',icon:'💼',label:'Financial Institutions & Investors',desc:'Shareholders, banks, ESG funds, rating agencies',mid:'#6B21A8',light:'#EDE9FE'},
 ];
 const LEVERS=[
-  {id:'cost',tag:'Cost',   label:'Cost Reduction',  desc:'Sustainability lowers operating costs, improves margins',bg:'#FFF3E0',tc:'#B45309'},
-  {id:'wtp', tag:'WTP',   label:'WTP Creation',    desc:'Customers pay a premium for sustainable offerings',   bg:'#D8F3DC',tc:'#2D6A4F'},
-  {id:'mkt', tag:'Market',label:'Market Creation', desc:'New customer segments emerge from the disruption',    bg:'#DBEAFE',tc:'#1565C0'},
-  {id:'combo',tag:'Combined',label:'Combination',  desc:'Two or three levers working in parallel',             bg:'#F6EDCC',tc:'#8B6414'},
+  {id:'cost',  tag:'2a',    label:'Cost Reduction',                  desc:'Sustainability lowers operating costs and improves margins',    bg:'#FFF3E0',tc:'#B45309'},
+  {id:'wtp',   tag:'2b',    label:'WTP Creation',                    desc:'Customers pay a premium for sustainable offerings',            bg:'#D8F3DC',tc:'#2D6A4F'},
+  {id:'mktEx', tag:'2c.i',  label:'Market Creation — New Customers', desc:'Reach additional customer groups you did not serve before',    bg:'#DBEAFE',tc:'#1565C0'},
+  {id:'mktNew',tag:'2c.ii', label:'Market Creation — New Market',    desc:'Create an entirely new market around an unmet need',           bg:'#EDE9FE',tc:'#6B21A8'},
+  {id:'combo', tag:'2d',    label:'Combination',                     desc:'Two or three levers working in parallel',                     bg:'#F6EDCC',tc:'#8B6414'},
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},mktSeg:'',profitPressure:'',sustSuccess:'',sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},mktSeg:'',profitPressure:'',sustSuccess:'',sth:STYPES.map(t=>mkSth(t.id)),oppDesc:'',lever:'',costData:{i:'',ii:''},wtpData:{i:'',ii:''},mktExData:{i:'',ii:''},mktNewData:{i:'',ii:''},comboLevers:[],comboAdditional:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -522,6 +523,13 @@ OUTPUT DISCIPLINE: Write all four sections in full. Do not add preamble, caveats
     const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
     const sthText=lines.map(s=>{const tp=STYPES.find(x=>x.id===s.id);return`${tp.label}: ${(s.opp||'').slice(0,100)}`;}).join(' | ');
     const digest=coachingDigest(st.chats||{});
+    const c=(s,n)=>(s||'').slice(0,n);
+    let leverDetail='';
+    if(st.lever==='cost')leverDetail=`Immediacy: "${c(st.costData?.i,180)}" | Advantages/gaps: "${c(st.costData?.ii,180)}"`;
+    else if(st.lever==='wtp')leverDetail=`Segment & WTP: "${c(st.wtpData?.i,180)}" | Advantages/gaps: "${c(st.wtpData?.ii,180)}"`;
+    else if(st.lever==='mktEx')leverDetail=`Why new customers: "${c(st.mktExData?.i,180)}" | Advantages/gaps: "${c(st.mktExData?.ii,180)}"`;
+    else if(st.lever==='mktNew')leverDetail=`Unmet need: "${c(st.mktNewData?.i,180)}" | Advantages/gaps: "${c(st.mktNewData?.ii,180)}"`;
+    else if(st.lever==='combo'){const pts=[];if((st.comboLevers||[]).includes('cost'))pts.push(`Cost: "${c(st.costData?.i,120)}" adv="${c(st.costData?.ii,100)}"`);if((st.comboLevers||[]).includes('wtp'))pts.push(`WTP: "${c(st.wtpData?.i,120)}" adv="${c(st.wtpData?.ii,100)}"`);if((st.comboLevers||[]).includes('mktEx'))pts.push(`NewCust: "${c(st.mktExData?.i,120)}" adv="${c(st.mktExData?.ii,100)}"`);if((st.comboLevers||[]).includes('mktNew'))pts.push(`NewMkt: "${c(st.mktNewData?.i,120)}" adv="${c(st.mktNewData?.ii,100)}"`);leverDetail=`Levers: ${(st.comboLevers||[]).join('+')} | ${pts.join(' | ')} | Additional wins: "${c(st.comboAdditional,180)}"`;};
 
     const prompt=`Produce a Strategic Advisor Brief for this group.
 
@@ -530,13 +538,13 @@ SUSTAINABILITY CHALLENGE: ${st.fish.name||'—'}
 ${(st.fish.desc||'').slice(0,400)}
 
 MARKET & INDUSTRY CONTEXT:
-- Market/segment: ${(st.mktSeg||'not specified').slice(0,200)}
-- Profit & growth outlook: ${(st.profitPressure||'not specified').slice(0,200)}
-- Sustainability initiatives that worked in this industry: ${(st.sustSuccess||'not specified').slice(0,250)}
+- Market/segment: ${c(st.mktSeg,200)}
+- Profit & growth outlook: ${c(st.profitPressure,200)}
+- Sustainability initiatives that worked in this industry: ${c(st.sustSuccess,250)}
 
 STRATEGIC LEVER CHOSEN: ${linfo?.label||'Not selected'}
-${st.mseg?`Target segment: ${st.mseg}`:''}
-Strategic path: ${(st.ldetail||'').slice(0,300)}
+Opportunity: ${c(st.oppDesc,300)}
+${leverDetail}
 
 KEY STAKEHOLDER OPPORTUNITIES: ${sthText||'Not completed'}
 
@@ -639,7 +647,14 @@ CRITICAL OUTPUT DISCIPLINE: You have a hard token budget. All seven sections mus
     const digest=coachingDigest(st.chats||{});
     const digestSection=digest?`\nAI COACHING INSIGHTS FROM DIALOGUE (incorporate refined thinking from these exchanges into the report where relevant):\n${digest}\n`:'';
 
-    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nMARKET & INDUSTRY CONTEXT:\n- Market/segment: ${(st.mktSeg||'—').slice(0,180)}\n- Profit & growth outlook: ${(st.profitPressure||'—').slice(0,180)}\n- Sustainability initiatives that worked in this industry: ${(st.sustSuccess||'—').slice(0,220)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo with exactly these seven sections, each tight and complete — 2–4 sentences or a short table per section:
+    let cfoLeverDetail='';
+    if(st.lever==='cost')cfoLeverDetail=`Immediacy: "${cap(st.costData?.i,160)}" | Advantages/gaps: "${cap(st.costData?.ii,160)}"`;
+    else if(st.lever==='wtp')cfoLeverDetail=`Segment & WTP: "${cap(st.wtpData?.i,160)}" | Advantages/gaps: "${cap(st.wtpData?.ii,160)}"`;
+    else if(st.lever==='mktEx')cfoLeverDetail=`Why new customers: "${cap(st.mktExData?.i,160)}" | Advantages/gaps: "${cap(st.mktExData?.ii,160)}"`;
+    else if(st.lever==='mktNew')cfoLeverDetail=`Unmet need: "${cap(st.mktNewData?.i,160)}" | Advantages/gaps: "${cap(st.mktNewData?.ii,160)}"`;
+    else if(st.lever==='combo'){const pts=[];if((st.comboLevers||[]).includes('cost'))pts.push(`Cost: "${cap(st.costData?.i,100)}"`);if((st.comboLevers||[]).includes('wtp'))pts.push(`WTP: "${cap(st.wtpData?.i,100)}"`);if((st.comboLevers||[]).includes('mktEx'))pts.push(`NewCust: "${cap(st.mktExData?.i,100)}"`);if((st.comboLevers||[]).includes('mktNew'))pts.push(`NewMkt: "${cap(st.mktNewData?.i,100)}"`);cfoLeverDetail=`Levers: ${(st.comboLevers||[]).join('+')} | ${pts.join(' | ')} | Additional wins: "${cap(st.comboAdditional,160)}"`;};
+
+    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nMARKET & INDUSTRY CONTEXT:\n- Market/segment: ${(st.mktSeg||'—').slice(0,180)}\n- Profit & growth outlook: ${(st.profitPressure||'—').slice(0,180)}\n- Sustainability initiatives that worked in this industry: ${(st.sustSuccess||'—').slice(0,220)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\nOpportunity: ${cap(st.oppDesc,300)}\n${cfoLeverDetail}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo with exactly these seven sections, each tight and complete — 2–4 sentences or a short table per section:
 (1) Executive summary highlight-box: one-paragraph recommendation + NPV headline numbers.
 (2) Strategic materiality: why this challenge is urgent now given the market/segment and profit outlook provided (2–3 sentences).
 (3) Stakeholder landscape: one sentence per relevant stakeholder group, note any coaching-surfaced gaps.
@@ -876,53 +891,177 @@ You are a sustainability strategy professor facilitating an executive education 
 /* ─── STEP 2 ─── */
 function S2({st,set}){
   const upd=(k,v)=>set(s=>({...s,[k]:v}));
-  const showSeg=st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo';
+  const updSub=(field,k,v)=>set(s=>({...s,[field]:{...s[field],[k]:v}}));
+  const toggleCombo=id=>set(s=>({...s,comboLevers:(s.comboLevers||[]).includes(id)?(s.comboLevers||[]).filter(x=>x!==id):[...(s.comboLevers||[]),id]}));
+
+  const COMBO_CHIPS=[
+    {id:'cost',  label:'Cost Reduction',     color:'#B45309'},
+    {id:'wtp',   label:'WTP Creation',        color:'#2D6A4F'},
+    {id:'mktEx', label:'New Customer Group',  color:'#1565C0'},
+    {id:'mktNew',label:'New Market',          color:'#6B21A8'},
+  ];
 
   const sysPrompt=`SCOPE GUARDRAIL: This tool is designed exclusively for challenges with a clear environmental, social, or governance (ESG) dimension — such as carbon emissions, resource depletion, biodiversity loss, supply chain ethics, community impact, circular economy, or ESG-driven regulation. If the challenge or question does not have a meaningful ESG dimension, do not engage with the substance. Politely but firmly explain that this tool is scoped to sustainability strategy, and ask the participant to reframe their challenge around its environmental, social, or governance impact before you proceed.
 
-You are a sustainability strategy professor reviewing strategic lever choices. Challenge vague lever selections. Test whether the market segment is sufficiently specific. Ask about competitive dynamics and second-order effects. Reference real strategic pivots by companies (e.g. Ørsted from oil to wind, Unilever's Sustainable Living brands, Interface's Mission Zero). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off, no general statements. Start directly with point 1. Hard limit: 300 words.`;
+You are a sustainability strategy professor reviewing strategic lever choices. Challenge vague lever selections. Test whether the opportunity is sufficiently specific and whether competitive advantages are realistic. Ask about competitive dynamics and second-order effects. Reference real strategic pivots by companies (e.g. Ørsted from oil to wind, Unilever's Sustainable Living brands, Interface's Mission Zero, Patagonia's repair model). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off, no general statements. Start directly with point 1. Hard limit: 300 words.`;
 
   const buildPrompt=()=>{
     const linfo=LEVERS.find(l=>l.id===st.lever);
+    let detail='';
+    if(st.lever==='cost')detail=`Immediacy of cost reduction: ${st.costData?.i||'not specified'}\nCompetitive advantages & gaps: ${st.costData?.ii||'not specified'}`;
+    else if(st.lever==='wtp')detail=`Target segment & WTP rationale: ${st.wtpData?.i||'not specified'}\nCompetitive advantages & gaps: ${st.wtpData?.ii||'not specified'}`;
+    else if(st.lever==='mktEx')detail=`Why new customers would be convinced: ${st.mktExData?.i||'not specified'}\nCompetitive advantages & gaps: ${st.mktExData?.ii||'not specified'}`;
+    else if(st.lever==='mktNew')detail=`Unmet need & value creation: ${st.mktNewData?.i||'not specified'}\nCompetitive advantages & gaps: ${st.mktNewData?.ii||'not specified'}`;
+    else if(st.lever==='combo'){
+      const parts=[];
+      if((st.comboLevers||[]).includes('cost'))parts.push(`Cost — immediacy: "${st.costData?.i||'—'}" | adv/gaps: "${st.costData?.ii||'—'}"`);
+      if((st.comboLevers||[]).includes('wtp'))parts.push(`WTP — segment: "${st.wtpData?.i||'—'}" | adv/gaps: "${st.wtpData?.ii||'—'}"`);
+      if((st.comboLevers||[]).includes('mktEx'))parts.push(`New Customers: "${st.mktExData?.i||'—'}" | adv/gaps: "${st.mktExData?.ii||'—'}"`);
+      if((st.comboLevers||[]).includes('mktNew'))parts.push(`New Market: "${st.mktNewData?.i||'—'}" | adv/gaps: "${st.mktNewData?.ii||'—'}"`);
+      detail=`Levers combined: ${(st.comboLevers||[]).join(', ')||'none selected'}\n${parts.join('\n')}\nAdditional wins & investments: ${st.comboAdditional||'not specified'}`;
+    }
     return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) is addressing challenge: "${st.fish.name}".
 
-MARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes in their industry: ${st.sustSuccess||'not specified'}
+MARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes: ${st.sustSuccess||'not specified'}
+
+Opportunity description: ${st.oppDesc||'not specified'}
 
 Strategic lever selected: ${linfo?.label||'none selected'}
-${showSeg?`Target market segment: ${st.mseg||'not specified'}`:''}
-Strategic path: ${st.ldetail||'not specified'}
+${detail}
 
-Challenge their lever choice in light of the market and profit context above. Is this the right lever given the profit environment? Is the market segment specific enough? What are they missing or underestimating? Draw on the industry track record of sustainability initiatives they described. Reference 1 comparable company case.`;
+Challenge their lever choice in light of the market and profit context above. Is this the right lever given the profit environment? Is the opportunity specific enough? Are their claimed competitive advantages realistic? Draw on the industry track record of sustainability initiatives they described. Reference 1 comparable company case.`;
   };
+
+  const fs={minHeight:76};
+  const subSection=(color,title,fields)=>(
+    <div style={{border:`1px solid ${color}22`,borderLeft:`4px solid ${color}`,borderRadius:'var(--r)',padding:'1.25rem 1.5rem',marginBottom:'0.875rem'}}>
+      <div style={{fontSize:'0.7rem',fontWeight:700,color,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'0.875rem'}}>{title}</div>
+      {fields.map(([lbl,val,setter,ph],i)=>(
+        <div className="fld" key={i} style={i===fields.length-1?{marginBottom:0}:{}}>
+          <label>{lbl}</label>
+          <textarea value={val} onChange={e=>setter(e.target.value)} placeholder={ph} style={fs}/>
+        </div>
+      ))}
+    </div>
+  );
 
   return<div>
     <div className="card">
-
       <div className="ey">Question 2</div>
-      <h2 className="ctitle">Strategic Levers</h2>
-      <p className="csub">Select the primary lever that best captures the opportunity, and explain the strategic path in concrete terms.</p>
+      <h2 className="ctitle">Strategic Lever</h2>
+      <p className="csub">Identify the primary lever that turns your sustainability challenge into a business opportunity, then develop it with concrete sub-questions.</p>
       <div className="divl"/>
       <div className="fld">
-        <label>Primary strategic lever</label>
-        <div className="lg">
-          {LEVERS.map(l=><div key={l.id} className={`lc ${st.lever===l.id?'sel':''}`} onClick={()=>upd('lever',l.id)}>
-            <span className="lt" style={{background:l.bg,color:l.tc}}>{l.tag}</span>
-            <div className="ltt">{l.label}</div>
-            <div className="ld">{l.desc}</div>
-          </div>)}
+        <label>1 · Describe the sustainability business opportunity you want to develop</label>
+        <textarea value={st.oppDesc||''} onChange={e=>upd('oppDesc',e.target.value)} placeholder="What is the specific opportunity? What makes it viable now? How does it connect to your sustainability challenge?" style={{minHeight:96}}/>
+      </div>
+      <div className="divl"/>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2 · Select the primary lever that best captures the opportunity</label>
+        <div className="lg" style={{gridTemplateColumns:'1fr 1fr',marginTop:'0.5rem'}}>
+          {LEVERS.map(l=>(
+            <div key={l.id} className={`lc ${st.lever===l.id?'sel':''}`} onClick={()=>upd('lever',l.id)} style={l.id==='combo'?{gridColumn:'1/-1'}:{}}>
+              <span className="lt" style={{background:l.bg,color:l.tc}}>{l.tag}</span>
+              <div className="ltt">{l.label}</div>
+              <div className="ld">{l.desc}</div>
+            </div>
+          ))}
         </div>
       </div>
-      {showSeg&&<div className="fld">
-        <label>Target market segment</label>
-        <textarea value={st.mseg} onChange={e=>upd('mseg',e.target.value)} placeholder="Be specific: customer profile, unmet need, estimated size, willingness to pay premium. Avoid 'sustainability-conscious customers.'"/>
-        <div className="fld-hint">For Market Creation: who are the new customers this disruption is bringing into existence?</div>
-      </div>}
-      <div className="fld" style={{marginBottom:0}}>
-        <label>Strategic path — how will you pursue this lever?</label>
-        <textarea value={st.ldetail} onChange={e=>upd('ldetail',e.target.value)} placeholder="Describe concrete actions, business model changes, or investments required. Link back to the opportunities in Q1. Why is this lever the best fit for your competitive position?" style={{minHeight:120}}/>
-      </div>
     </div>
-    <AIChat stageLabel="Strategic Levers" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} initialMsgs={st.chats?.q2} regenUsed={!!st.chatRegenUsed?.q2} onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),q2:true}}))}/>
+
+    {st.lever==='cost'&&<div className="card">
+      <div className="ey">2a · Cost Reduction</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Cost reduction — deep dive</h2>
+      <div className="divl"/>
+      <div className="fld">
+        <label>2a.i — Will the cost reduction actions immediately lead to lower operating costs, or is there a prior capital investment needed, or both?</label>
+        <textarea value={st.costData?.i||''} onChange={e=>updSub('costData','i',e.target.value)} placeholder="Which cost lines will fall, over what timeframe, and what must happen first? How immediate is the saving?" style={fs}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2a.ii — What competitive advantages do you have to make this opportunity a reality? What competences are missing?</label>
+        <textarea value={st.costData?.ii||''} onChange={e=>updSub('costData','ii',e.target.value)} placeholder="Strengths that give you an edge (operations, supplier relationships, scale…). Gaps you need to close (technology, talent, partnerships…)" style={fs}/>
+      </div>
+    </div>}
+
+    {st.lever==='wtp'&&<div className="card">
+      <div className="ey">2b · WTP Creation</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Willingness-to-pay — deep dive</h2>
+      <div className="divl"/>
+      <div className="fld">
+        <label>2b.i — What market segment are you targeting and why would the target customer be willing to pay more?</label>
+        <textarea value={st.wtpData?.i||''} onChange={e=>updSub('wtpData','i',e.target.value)} placeholder="Customer profile, what sustainability attribute justifies a premium, estimated premium size, evidence of willingness to pay…" style={fs}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2b.ii — What competitive advantages do you have to make this opportunity a reality? What competences are missing?</label>
+        <textarea value={st.wtpData?.ii||''} onChange={e=>updSub('wtpData','ii',e.target.value)} placeholder="Strengths (brand, certification, supply chain traceability…). Gaps (credibility, measurement, marketing capabilities…)" style={fs}/>
+      </div>
+    </div>}
+
+    {st.lever==='mktEx'&&<div className="card">
+      <div className="ey">2c.i · Market Creation — New Customers</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>New customer group — deep dive</h2>
+      <div className="divl"/>
+      <div className="fld">
+        <label>2c.i.1 — Why would these customers now be convinced by your offer — lower price, new value, or both?</label>
+        <textarea value={st.mktExData?.i||''} onChange={e=>updSub('mktExData','i',e.target.value)} placeholder="Who are they? What barrier previously excluded them? What does your sustainable offering change — price, accessibility, or value proposition?" style={fs}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2c.i.2 — What competitive advantages do you have to make this opportunity a reality? What competences are missing?</label>
+        <textarea value={st.mktExData?.ii||''} onChange={e=>updSub('mktExData','ii',e.target.value)} placeholder="Strengths enabling reach to new customers. Gaps in distribution, product fit, or go-to-market capability…" style={fs}/>
+      </div>
+    </div>}
+
+    {st.lever==='mktNew'&&<div className="card">
+      <div className="ey">2c.ii · Market Creation — New Market</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>New market — deep dive</h2>
+      <div className="divl"/>
+      <div className="fld">
+        <label>2c.ii.1 — What is the unmet need, for whom, and how will your offer create value for customers?</label>
+        <textarea value={st.mktNewData?.i||''} onChange={e=>updSub('mktNewData','i',e.target.value)} placeholder="Define the latent need. Who is the customer that hasn't been served? What triggers them to buy? What value are you creating?" style={fs}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>2c.ii.2 — What competitive advantages do you have to make this opportunity a reality? What competences are missing?</label>
+        <textarea value={st.mktNewData?.ii||''} onChange={e=>updSub('mktNewData','ii',e.target.value)} placeholder="What makes you the right company to create this market? What capabilities or partnerships are needed?" style={fs}/>
+      </div>
+    </div>}
+
+    {st.lever==='combo'&&<div className="card">
+      <div className="ey">2d · Combination</div>
+      <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Combination — deep dive</h2>
+      <p className="csub">Select the levers you are combining and answer the sub-questions for each.</p>
+      <div className="divl"/>
+      <div style={{display:'flex',flexWrap:'wrap',gap:'0.5rem',marginBottom:'1.5rem'}}>
+        {COMBO_CHIPS.map(c=>{
+          const sel=(st.comboLevers||[]).includes(c.id);
+          return<button key={c.id} onClick={()=>toggleCombo(c.id)} style={{padding:'0.38rem 1rem',borderRadius:20,border:`2px solid ${sel?c.color:'var(--border-m)'}`,background:sel?c.color+'18':'white',color:sel?c.color:'#555',fontSize:'0.82rem',fontWeight:sel?600:400,cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}>{c.label}</button>;
+        })}
+      </div>
+
+      {(st.comboLevers||[]).includes('cost')&&subSection('#B45309','Cost Reduction',[
+        ['2a.i — Immediacy of cost reduction',st.costData?.i||'',v=>updSub('costData','i',v),'Immediate savings or capital investment needed first?'],
+        ['2a.ii — Competitive advantages & gaps',st.costData?.ii||'',v=>updSub('costData','ii',v),'Strengths and capability gaps…'],
+      ])}
+      {(st.comboLevers||[]).includes('wtp')&&subSection('#2D6A4F','WTP Creation',[
+        ['2b.i — Target segment & WTP rationale',st.wtpData?.i||'',v=>updSub('wtpData','i',v),'Who pays more and why?'],
+        ['2b.ii — Competitive advantages & gaps',st.wtpData?.ii||'',v=>updSub('wtpData','ii',v),'Strengths and capability gaps…'],
+      ])}
+      {(st.comboLevers||[]).includes('mktEx')&&subSection('#1565C0','New Customer Group',[
+        ['2c.i.1 — Why new customers would be convinced',st.mktExData?.i||'',v=>updSub('mktExData','i',v),'Lower price, new value, or both?'],
+        ['2c.i.2 — Competitive advantages & gaps',st.mktExData?.ii||'',v=>updSub('mktExData','ii',v),'Strengths and capability gaps…'],
+      ])}
+      {(st.comboLevers||[]).includes('mktNew')&&subSection('#6B21A8','New Market',[
+        ['2c.ii.1 — Unmet need & value creation',st.mktNewData?.i||'',v=>updSub('mktNewData','i',v),'What unmet need, for whom, what value?'],
+        ['2c.ii.2 — Competitive advantages & gaps',st.mktNewData?.ii||'',v=>updSub('mktNewData','ii',v),'Strengths and capability gaps…'],
+      ])}
+
+      <div className="fld" style={{marginBottom:0,marginTop:(st.comboLevers||[]).length>0?'0.25rem':0}}>
+        <label>2d.i — Describe any additional wins as well as actions and investments needed to achieve the combined results</label>
+        <textarea value={st.comboAdditional||''} onChange={e=>upd('comboAdditional',e.target.value)} placeholder="How do the combined levers reinforce each other? What synergies emerge from the combination? What specific investments or actions are required?" style={{minHeight:96}}/>
+      </div>
+    </div>}
+
+    <AIChat stageLabel="Strategic Lever" systemPrompt={sysPrompt} buildPrompt={buildPrompt} onUpdate={m=>set(s=>({...s,chats:{...s.chats,q2:m}}))} initialMsgs={st.chats?.q2} regenUsed={!!st.chatRegenUsed?.q2} onRegenUsed={()=>set(s=>({...s,chatRegenUsed:{...(s.chatRegenUsed||{}),q2:true}}))}/>
   </div>;
 }
 
@@ -1077,8 +1216,13 @@ function S4({st,set}){
           profitPressure:st.profitPressure||'',
           sustSuccess:st.sustSuccess||'',
           lever,
-          leverDetail:st.ldetail||'',
-          marketSegment:st.mseg||'',
+          oppDesc:st.oppDesc||'',
+          costData:st.costData||{},
+          wtpData:st.wtpData||{},
+          mktExData:st.mktExData||{},
+          mktNewData:st.mktNewData||{},
+          comboLevers:st.comboLevers||[],
+          comboAdditional:st.comboAdditional||'',
           stakeholders:actv,
           benefitLines:lines,
           npv5,npv10,
@@ -1138,12 +1282,29 @@ function S4({st,set}){
     </div>
 
     <div className="sum-sec">
-      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Question 2</div><h3>Strategic Levers</h3></div></div>
+      <div className="sum-sec-hd"><div><div className="sum-sec-ey">Question 2</div><h3>Strategic Lever</h3></div></div>
       <div className="sum-sec-body">
+        {st.oppDesc&&<div style={{marginBottom:'1rem'}}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Opportunity</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{st.oppDesc}</div></div>}
         {linfo&&<span style={{display:'inline-block',padding:'0.28rem 0.85rem',borderRadius:20,fontSize:'0.79rem',fontWeight:500,background:linfo.bg,color:linfo.tc,marginBottom:'0.875rem'}}>{linfo.label}</span>}
-        {(lever==='wtp'||lever==='mkt'||lever==='combo')&&mseg&&<div style={{marginBottom:'0.875rem'}}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Target segment</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{mseg}</div></div>}
-        <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Strategic path</div>
-        <div style={{fontSize:'0.85rem',lineHeight:1.55}}>{ldetail||<em style={{color:'#ccc'}}>—</em>}</div>
+        {lever==='cost'&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+          {[['Immediacy',st.costData?.i],['Advantages & gaps',st.costData?.ii]].map(([l,v])=>(<div key={l}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>{l}</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{v||<em style={{color:'#ccc'}}>—</em>}</div></div>))}
+        </div>}
+        {lever==='wtp'&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+          {[['Target segment & WTP',st.wtpData?.i],['Advantages & gaps',st.wtpData?.ii]].map(([l,v])=>(<div key={l}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>{l}</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{v||<em style={{color:'#ccc'}}>—</em>}</div></div>))}
+        </div>}
+        {lever==='mktEx'&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+          {[['Why new customers convinced',st.mktExData?.i],['Advantages & gaps',st.mktExData?.ii]].map(([l,v])=>(<div key={l}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>{l}</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{v||<em style={{color:'#ccc'}}>—</em>}</div></div>))}
+        </div>}
+        {lever==='mktNew'&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+          {[['Unmet need & value',st.mktNewData?.i],['Advantages & gaps',st.mktNewData?.ii]].map(([l,v])=>(<div key={l}><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>{l}</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{v||<em style={{color:'#ccc'}}>—</em>}</div></div>))}
+        </div>}
+        {lever==='combo'&&<div>
+          <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.4rem'}}>Levers combined</div>
+          <div style={{display:'flex',gap:'0.4rem',flexWrap:'wrap',marginBottom:'0.875rem'}}>
+            {(st.comboLevers||[]).map(id=>{const l=LEVERS.find(x=>x.id===id);return l?<span key={id} style={{padding:'0.2rem 0.7rem',borderRadius:20,fontSize:'0.76rem',fontWeight:500,background:l.bg,color:l.tc}}>{l.label}</span>:null;})}
+          </div>
+          {st.comboAdditional&&<div><div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.22rem'}}>Additional wins & investments</div><div style={{fontSize:'0.85rem',lineHeight:1.55}}>{st.comboAdditional}</div></div>}
+        </div>}
       </div>
     </div>
 
