@@ -421,9 +421,18 @@ app.post('/admin/submissions/:id/resend-email', requireAdmin, async (req, res) =
   const sub = r.rows[0];
   await pool.query(`UPDATE submissions SET email_status='pending', email_error='' WHERE id=$1`, [sub.id]);
   try {
-    await sendEmail({ ...sub, groupName: sub.group_name, challengeName: sub.challenge_name,
-      challengeDesc: sub.challenge_desc, consultantHtml: sub.consultant_html,
-      reportHtml: sub.report_html });
+    const parseJ = v => { try { return typeof v === 'string' ? JSON.parse(v) : (v || []); } catch { return []; } };
+    await sendEmail({
+      ...sub,
+      groupName:      sub.group_name,
+      challengeName:  sub.challenge_name,
+      challengeDesc:  sub.challenge_desc,
+      consultantHtml: sub.consultant_html,
+      reportHtml:     sub.report_html,
+      stakeholders:   parseJ(sub.stakeholders),
+      benefitLines:   parseJ(sub.benefit_lines),
+      cohortName:     sub.cohort_name,
+    });
     await pool.query(`UPDATE submissions SET email_status='sent', email_error='' WHERE id=$1`, [sub.id]);
     res.redirect('/admin?msg=Email+resent+successfully');
   } catch (e) {
@@ -870,7 +879,8 @@ async function sendEmail(d) {
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.message || `Resend error ${res.status}`);
+    console.error('Resend rejected email:', res.status, JSON.stringify(err));
+    throw new Error(err.message || `Resend ${res.status}: ${JSON.stringify(err)}`);
   }
 }
 
