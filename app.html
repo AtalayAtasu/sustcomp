@@ -975,7 +975,7 @@ Challenge their lever choice in light of the market and profit context above. Is
       <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Cost reduction — deep dive</h2>
       <div className="divl"/>
       <div className="fld">
-        <label>2a.i — Will the cost reduction actions immediately lead to lower operating costs, or is there a prior capital investment needed, or both?</label>
+        <label>2a.i — Will the cost reduction actions immediately lead to lower operating costs or is there a prior capital investment needed first, or both?</label>
         <textarea value={st.costData?.i||''} onChange={e=>updSub('costData','i',e.target.value)} placeholder="Which cost lines will fall, over what timeframe, and what must happen first? How immediate is the saving?" style={fs}/>
       </div>
       <div className="fld" style={{marginBottom:0}}>
@@ -1003,7 +1003,7 @@ Challenge their lever choice in light of the market and profit context above. Is
       <h2 className="ctitle" style={{fontSize:'1.3rem'}}>New customer group — deep dive</h2>
       <div className="divl"/>
       <div className="fld">
-        <label>2c.i.1 — Why would these customers now be convinced by your offer — lower price, new value, or both?</label>
+        <label>2c.i.1 — Why would these customers now be convinced by your offer (lower price? new value? both?)</label>
         <textarea value={st.mktExData?.i||''} onChange={e=>updSub('mktExData','i',e.target.value)} placeholder="Who are they? What barrier previously excluded them? What does your sustainable offering change — price, accessibility, or value proposition?" style={fs}/>
       </div>
       <div className="fld" style={{marginBottom:0}}>
@@ -1039,24 +1039,24 @@ Challenge their lever choice in light of the market and profit context above. Is
       </div>
 
       {(st.comboLevers||[]).includes('cost')&&subSection('#B45309','Cost Reduction',[
-        ['2a.i — Immediacy of cost reduction',st.costData?.i||'',v=>updSub('costData','i',v),'Immediate savings or capital investment needed first?'],
-        ['2a.ii — Competitive advantages & gaps',st.costData?.ii||'',v=>updSub('costData','ii',v),'Strengths and capability gaps…'],
+        ['2a.i — Will the cost reduction actions immediately lead to lower operating costs or is there a prior capital investment needed first, or both?',st.costData?.i||'',v=>updSub('costData','i',v),'Which cost lines will fall, over what timeframe, and what must happen first?'],
+        ['2a.ii — What competitive advantages do you have to make this opportunity a reality? What competences are missing?',st.costData?.ii||'',v=>updSub('costData','ii',v),'Strengths that give you an edge. Gaps you need to close…'],
       ])}
       {(st.comboLevers||[]).includes('wtp')&&subSection('#2D6A4F','WTP Creation',[
-        ['2b.i — Target segment & WTP rationale',st.wtpData?.i||'',v=>updSub('wtpData','i',v),'Who pays more and why?'],
-        ['2b.ii — Competitive advantages & gaps',st.wtpData?.ii||'',v=>updSub('wtpData','ii',v),'Strengths and capability gaps…'],
+        ['2b.i — What market segment are you targeting and why would the target customer be willing to pay more?',st.wtpData?.i||'',v=>updSub('wtpData','i',v),'Customer profile, sustainability attribute, estimated premium, evidence of willingness to pay…'],
+        ['2b.ii — What competitive advantages do you have to make this opportunity a reality? What competences are missing?',st.wtpData?.ii||'',v=>updSub('wtpData','ii',v),'Strengths (brand, certification…). Gaps (credibility, marketing capabilities…)'],
       ])}
       {(st.comboLevers||[]).includes('mktEx')&&subSection('#1565C0','New Customer Group',[
-        ['2c.i.1 — Why new customers would be convinced',st.mktExData?.i||'',v=>updSub('mktExData','i',v),'Lower price, new value, or both?'],
-        ['2c.i.2 — Competitive advantages & gaps',st.mktExData?.ii||'',v=>updSub('mktExData','ii',v),'Strengths and capability gaps…'],
+        ['2c.i.1 — Why would these customers now be convinced by your offer (lower price? new value? both?)',st.mktExData?.i||'',v=>updSub('mktExData','i',v),'Who are they? What barrier excluded them before? What does your sustainable offering change?'],
+        ['2c.i.2 — What competitive advantages do you have to make this opportunity a reality? What competences are missing?',st.mktExData?.ii||'',v=>updSub('mktExData','ii',v),'Strengths enabling reach to new customers. Gaps in distribution, product fit, or go-to-market…'],
       ])}
       {(st.comboLevers||[]).includes('mktNew')&&subSection('#6B21A8','New Market',[
-        ['2c.ii.1 — Unmet need & value creation',st.mktNewData?.i||'',v=>updSub('mktNewData','i',v),'What unmet need, for whom, what value?'],
-        ['2c.ii.2 — Competitive advantages & gaps',st.mktNewData?.ii||'',v=>updSub('mktNewData','ii',v),'Strengths and capability gaps…'],
+        ['2c.ii.1 — What is the unmet need, for whom, and how will your offer create value for customers?',st.mktNewData?.i||'',v=>updSub('mktNewData','i',v),'Define the latent need. Who is the customer not yet served? What triggers them to buy?'],
+        ['2c.ii.2 — What competitive advantages do you have to make this opportunity a reality? What competences are missing?',st.mktNewData?.ii||'',v=>updSub('mktNewData','ii',v),'What makes you the right company to create this market? Capabilities or partnerships needed?'],
       ])}
 
       <div className="fld" style={{marginBottom:0,marginTop:(st.comboLevers||[]).length>0?'0.25rem':0}}>
-        <label>2d.i — Describe any additional wins as well as actions and investments needed to achieve the combined results</label>
+        <label>2d.i — Describe any additional 'wins' as well as actions and investments needed to achieve the combined results</label>
         <textarea value={st.comboAdditional||''} onChange={e=>upd('comboAdditional',e.target.value)} placeholder="How do the combined levers reinforce each other? What synergies emerge from the combination? What specific investments or actions are required?" style={{minHeight:96}}/>
       </div>
     </div>}
