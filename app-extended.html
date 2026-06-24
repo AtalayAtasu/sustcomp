@@ -782,6 +782,66 @@ Challenge their strategic opportunity analysis. Is the triple-win vision genuine
   </div>;
 }
 
+/* ─── RESEARCH BRIEF ─── */
+const DRIVER_META={
+  inputPct: {label:'Input/supply cost reduction',        pct:true},
+  talentEur:{label:'Talent savings',                     pct:false},
+  envEur:   {label:'Environmental savings',              pct:false},
+  volPct:   {label:'Volume growth from sustainability',  pct:true},
+  premPct:  {label:'Sustainable price premium',          pct:true},
+  cogsNet:  {label:'Net COGS impact',                    pct:true},
+  compEur:  {label:'Regulatory savings / avoided fines', pct:false},
+  grantsEur:{label:'Grants, tax incentives',             pct:false},
+  finEur:   {label:'Financing cost reduction',           pct:false},
+};
+
+function ResearchBrief({brief,actv,cur}){
+  const [open,setOpen]=useState(true);
+  const fv=(v,pct)=>{
+    if(v===null||v===undefined)return'—';
+    if(pct)return`${v}%`;
+    if(Math.abs(v)>=1e6)return`${(v/1e6).toFixed(1)}M ${cur}`;
+    if(Math.abs(v)>=1000)return`${Math.round(v/1000)}k ${cur}`;
+    return`${Math.round(v)} ${cur}`;
+  };
+  return<div style={{marginTop:'0.75rem',borderTop:'1px solid #F5C842',paddingTop:'0.65rem'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:open?'0.75rem':0}}>
+      <div style={{fontSize:'0.76rem',fontWeight:700,color:'#5A4000'}}>Research Brief</div>
+      <button onClick={()=>setOpen(o=>!o)} style={{background:'none',border:'none',cursor:'pointer',fontSize:'0.72rem',color:'#7A5C00',padding:0}}>{open?'▲ Collapse':'▼ Expand'}</button>
+    </div>
+    {open&&<>
+      {actv.map(s=>{
+        const tp=STYPES.find(t=>t.id===s.id);
+        const qdata=brief[s.id];
+        if(!qdata||!Object.keys(qdata).length)return null;
+        const drivers=Object.entries(qdata).filter(([k])=>DRIVER_META[k]);
+        if(!drivers.length)return null;
+        return<div key={s.id} style={{marginBottom:'1rem'}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'0.18rem 0.65rem',borderRadius:20,fontSize:'0.73rem',fontWeight:600,background:tp.light,color:tp.mid,marginBottom:'0.55rem'}}>{tp.icon} {tp.label}</div>
+          {drivers.map(([key,data])=>{
+            if(!DRIVER_META[key]||!data)return null;
+            const meta=DRIVER_META[key];
+            const hasRange=data.low!==null||data.base!==null||data.high!==null;
+            return<div key={key} style={{borderLeft:`2px solid ${tp.light}`,paddingLeft:'0.7rem',marginBottom:'0.65rem'}}>
+              <div style={{fontSize:'0.75rem',fontWeight:600,color:'#1A1A1A',marginBottom:'0.22rem'}}>{meta.label}</div>
+              {hasRange&&<div style={{display:'flex',gap:'1.5rem',marginBottom:'0.28rem'}}>
+                {[['Conservative',data.low],['Base case',data.base],['Optimistic',data.high]].map(([lbl,val])=>(
+                  <div key={lbl}>
+                    <div style={{fontSize:'0.6rem',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.07em'}}>{lbl}</div>
+                    <div style={{fontSize:'0.9rem',fontWeight:700,color:val!==null?tp.mid:'#ccc'}}>{fv(val,meta.pct)}</div>
+                  </div>
+                ))}
+              </div>}
+              {data.basis&&<div style={{fontSize:'0.72rem',color:'#665',lineHeight:1.55,fontStyle:'italic'}}>{data.basis}</div>}
+            </div>;
+          })}
+        </div>;
+      })}
+      <div style={{fontSize:'0.69rem',color:'#8B6414',marginTop:'0.25rem'}}>NPV+ framework: Atasu &amp; Peyer (INSEAD, 2025). Benchmarks from public sources — verify relevance to your specific business context before using.</div>
+    </>}
+  </div>;
+}
+
 /* ─── STEP 5 · NPV+ VALUATION ─── */
 function S5({st,set}){
   const upd=(k,v)=>set(s=>({...s,[k]:v}));
@@ -790,6 +850,7 @@ function S5({st,set}){
   const [vh,setVh]=useState(5);
   const [aiState,setAiState]=useState('idle');
   const [aiError,setAiError]=useState('');
+  const [aiBrief,setAiBrief]=useState(null);
   const actv=st.sth.filter(x=>x.on);
   const cur=st.curr;
   const rev=parseFloat(st.baseRevenue)||0;
@@ -830,24 +891,42 @@ Challenge this financial model. Is the CAPEX consistent with the investments ide
   const getStartingNumbers=async()=>{
     setAiState('loading');setAiError('');
     const sthList=actv.map(x=>STYPES.find(t=>t.id===x.id).label).join(', ');
-    const prompt=`You are helping an executive education participant build an NPV+ financial model for a sustainability strategy.
+    const prompt=`You are a sustainability strategy research analyst providing benchmark data to help an executive education participant assess the financial potential of a sustainability initiative.
 
 Company/group: "${st.grp.name||'unnamed'}" | Industry: "${st.grp.industry||'not specified'}"
 Sustainability challenge: "${st.fish.name||'not specified'}" — ${(st.fish.desc||'').slice(0,200)}
 Strategic lever: ${linfo?.label||'not selected'}
 Triple-win vision: ${(st.vision||'').slice(0,200)}
 Active stakeholder quadrants: ${sthList||'none'}
-Annual revenue: ${rev>0?fmt(rev,cur):'not provided'}
-Gross margin: ${mgn}%
+Annual revenue: ${rev>0?fmt(rev,cur):'not provided'} | Gross margin: ${mgn}%
 
-Use web search to find typical industry benchmarks for this type of sustainability initiative. Then return ONLY a valid JSON object (no markdown fences, no explanation outside the JSON) with this exact structure:
+Use web search to find real-world benchmarks from comparable companies, industry studies, and consulting reports for each financial driver below. For each driver provide:
+- A CONSERVATIVE / BASE CASE / OPTIMISTIC range (null if no credible benchmark exists)
+- A 1-2 sentence basis citing specific sources (company, report title, year, number)
+
+Return ONLY valid JSON (no markdown, no preamble):
 {
-  "soc": {"inputPct": <number or null>, "talentEur": <number or null>, "envEur": <number or null>},
-  "eco": {"volPct": <number or null>, "premPct": <number or null>, "cogsNet": <number or null>},
-  "reg": {"compEur": <number or null>, "grantsEur": <number or null>},
-  "inv": {"finEur": <number or null>}
+  "soc": {
+    "inputPct": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."},
+    "talentEur": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."},
+    "envEur":    {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."}
+  },
+  "eco": {
+    "volPct":  {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."},
+    "premPct": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."},
+    "cogsNet": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."}
+  },
+  "reg": {
+    "compEur":   {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."},
+    "grantsEur": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."}
+  },
+  "inv": {
+    "finEur": {"low":<n|null>,"base":<n|null>,"high":<n|null>,"basis":"..."}
+  }
 }
-Only populate quadrants that are in the active list: ${sthList}. Use null for fields not applicable or where no reasonable benchmark exists. Percentages are plain numbers (e.g. 2 for 2%). EUR values are annual amounts — scale to the revenue provided if given, otherwise use absolute industry benchmark figures.`;
+Only populate quadrants in the active list: ${sthList}. For others return {}.
+Percentages: plain numbers (2 = 2%). cogsNet: negative = cost increase. EUR: scale to revenue if provided.
+Be specific: name companies, cite reports with years and actual numbers. If no benchmark exists for a driver, explain why in the basis field.`;
 
     try{
       let data,resp;
@@ -855,7 +934,7 @@ Only populate quadrants that are in the active list: ${sthList}. Use null for fi
         resp=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,system:'You are a financial analyst. Return only valid JSON, no markdown fences, no explanation.',tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2400,system:'You are a financial analyst producing research benchmarks. Return only valid JSON, no markdown fences, no text outside the JSON object.',tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
         });
         data=await resp.json();
         if((resp.status===429||resp.status===529)&&attempt<2){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
@@ -864,13 +943,7 @@ Only populate quadrants that are in the active list: ${sthList}. Use null for fi
       if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
       const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
       const json=JSON.parse(text.replace(/```json\n?|```\n?/g,'').trim());
-      set(s=>({...s,sth:s.sth.map(x=>{
-        const vals=json[x.id];
-        if(!vals)return x;
-        const newDr={...(x.dr||{})};
-        Object.entries(vals).forEach(([k,v])=>{if(v!==null&&v!==undefined)newDr[k]=String(v);});
-        return{...x,dr:newDr};
-      })}));
+      setAiBrief(json);
       setAiState('done');
     }catch(e){setAiError(e.message);setAiState('error');}
   };
@@ -966,18 +1039,18 @@ Only populate quadrants that are in the active list: ${sthList}. Use null for fi
       <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.85rem 1rem',marginBottom:'1.5rem'}}>
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
           <div style={{flex:1}}>
-            <div style={{fontSize:'0.82rem',fontWeight:600,color:'#5A4000',marginBottom:'0.3rem'}}>✦ Get AI starting numbers</div>
-            <div style={{fontSize:'0.76rem',color:'#7A5C00',lineHeight:1.55}}>AI will use web research to suggest benchmark driver values based on your industry and opportunity. <strong>These are illustrative starting points only</strong> — numbers are AI-generated from public sources and may be inaccurate. You must verify and replace them with figures specific to your business.</div>
+            <div style={{fontSize:'0.82rem',fontWeight:600,color:'#5A4000',marginBottom:'0.3rem'}}>✦ Research benchmarks</div>
+            <div style={{fontSize:'0.76rem',color:'#7A5C00',lineHeight:1.55}}>AI searches for real-world comparables — company reports, industry studies, consulting benchmarks — and returns a <strong>Conservative / Base / Optimistic range with cited sources</strong> for each driver. Read the rationale, then enter your own values in the fields below.</div>
           </div>
           <div style={{flexShrink:0,paddingTop:'0.15rem'}}>
-            {aiState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem'}} onClick={getStartingNumbers}>Get estimates</button>}
+            {aiState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem'}} onClick={getStartingNumbers}>Research benchmarks</button>}
             {aiState==='loading'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem',opacity:0.6}} disabled>Researching…</button>}
-            {aiState==='done'&&<span style={{fontSize:'0.76rem',color:'#2D6A4F',fontWeight:500}}>✓ Values pre-filled</span>}
+            {aiState==='done'&&<span style={{fontSize:'0.76rem',color:'#2D6A4F',fontWeight:500}}>✓ Brief ready</span>}
             {aiState==='error'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem'}} onClick={getStartingNumbers}>Retry</button>}
           </div>
         </div>
-        {aiState==='done'&&<div style={{marginTop:'0.6rem',fontSize:'0.73rem',color:'#7A5C00',borderTop:'1px solid #F5C842',paddingTop:'0.5rem'}}>⚠ NPV+ framework: Atasu &amp; Peyer (INSEAD, 2025). Numbers sourced from public web data — treat as directional only and verify against your own financials.</div>}
         {aiState==='error'&&<div style={{marginTop:'0.4rem',fontSize:'0.73rem',color:'#c33'}}>Error: {aiError}</div>}
+        {aiState==='done'&&aiBrief&&<ResearchBrief brief={aiBrief} actv={actv} cur={cur}/>}
       </div>
 
       {actv.length===0&&<div style={{textAlign:'center',padding:'2rem',color:'#aaa',fontSize:'0.85rem'}}>No stakeholders activated in Step 3. Go back and activate at least one.</div>}
