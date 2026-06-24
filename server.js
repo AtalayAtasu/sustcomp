@@ -64,6 +64,8 @@ async function initDB() {
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS consultant_html TEXT DEFAULT ''`);
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS version        TEXT DEFAULT 'basic'`);
   await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS extended_data  JSONB DEFAULT NULL`);
+  await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS email_status   TEXT DEFAULT 'pending'`);
+  await pool.query(`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS email_error    TEXT DEFAULT ''`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS drafts (
       user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -211,7 +213,7 @@ app.get('/admin', requireAdmin, async (req, res) => {
         LEFT JOIN cohorts c ON u.cohort_id = c.id
         ORDER BY u.created_at DESC`),
       pool.query(`
-        SELECT id, username, cohort_name, group_name, challenge_name, submitted_at, version
+        SELECT id, username, cohort_name, group_name, challenge_name, submitted_at, version, email_status, email_error
         FROM submissions ORDER BY submitted_at DESC LIMIT 100`)
     ]);
     res.send(adminHTML(cohortsR.rows, usersR.rows, subsR.rows, req.query.msg));
@@ -412,20 +414,40 @@ app.put('/api/draft/ext', requireLogin, async (req, res) => {
   } catch (e) { res.json({ ok: false }); }
 });
 
+// Submissions — resend email
+app.post('/admin/submissions/:id/resend-email', requireAdmin, async (req, res) => {
+  const r = await pool.query('SELECT * FROM submissions WHERE id=$1', [req.params.id]);
+  if (!r.rows[0]) return res.redirect('/admin?msg=Submission+not+found');
+  const sub = r.rows[0];
+  await pool.query(`UPDATE submissions SET email_status='pending', email_error='' WHERE id=$1`, [sub.id]);
+  try {
+    await sendEmail({ ...sub, groupName: sub.group_name, challengeName: sub.challenge_name,
+      challengeDesc: sub.challenge_desc, consultantHtml: sub.consultant_html,
+      reportHtml: sub.report_html });
+    await pool.query(`UPDATE submissions SET email_status='sent', email_error='' WHERE id=$1`, [sub.id]);
+    res.redirect('/admin?msg=Email+resent+successfully');
+  } catch (e) {
+    await pool.query(`UPDATE submissions SET email_status='failed', email_error=$1 WHERE id=$2`, [e.message, sub.id]);
+    res.redirect('/admin?msg=' + encodeURIComponent('Email failed: ' + e.message));
+  }
+});
+
 // ── SUBMIT ─────────────────────────────────────────────────────────────────
 
 app.post('/api/submit', requireLogin, async (req, res) => {
   const u = req.session.user;
   const d = req.body;
   try {
+    let subId;
     if (d.version === 'extended') {
       // Extended submission — store common fields + full payload in extended_data
-      await pool.query(`
+      const ins = await pool.query(`
         INSERT INTO submissions
           (user_id, username, cohort_name, group_name, members, industry,
            challenge_name, challenge_desc, npv5, npv10, capex, rate, currency,
            pitch, consultant_html, report_html, version, extended_data)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        RETURNING id`,
         [u.id, u.username, u.cohortName,
          d.groupName||'', d.members||'', d.industry||'',
          d.challengeName||'', d.challengeDesc||'',
@@ -433,16 +455,18 @@ app.post('/api/submit', requireLogin, async (req, res) => {
          d.currency||'EUR', d.pitch||'',
          d.consultantHtml||'', d.reportHtml||'',
          'extended', JSON.stringify(d)]);
+      subId = ins.rows[0].id;
       await pool.query('DELETE FROM drafts_ext WHERE user_id=$1', [u.id]);
     } else {
       // Basic submission
-      await pool.query(`
+      const ins = await pool.query(`
         INSERT INTO submissions
           (user_id, username, cohort_name, group_name, members, industry,
            challenge_name, challenge_desc, lever, lever_detail, market_segment,
            stakeholders, benefit_lines, npv5, npv10, capex, rate, currency,
            pitch, consultant_html, report_html, version)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+        RETURNING id`,
         [u.id, u.username, u.cohortName,
          d.groupName||'', d.members||'', d.industry||'',
          d.challengeName||'', d.challengeDesc||'',
@@ -452,14 +476,21 @@ app.post('/api/submit', requireLogin, async (req, res) => {
          d.npv5||0, d.npv10||0, d.capex||0, d.rate||0,
          d.currency||'EUR', d.pitch||'',
          d.consultantHtml||'', d.reportHtml||'', 'basic']);
+      subId = ins.rows[0].id;
       await pool.query('DELETE FROM drafts WHERE user_id=$1', [u.id]);
     }
 
     res.json({ success: true });
 
     sendEmail({ ...d, username: u.username, cohortName: u.cohortName })
-      .then(() => console.log(`Email sent for ${u.username}`))
-      .catch(e => console.error('Email failed for', u.username, ':', e.message));
+      .then(async () => {
+        console.log(`Email sent for ${u.username}`);
+        await pool.query(`UPDATE submissions SET email_status='sent', email_error='' WHERE id=$1`, [subId]);
+      })
+      .catch(async e => {
+        console.error('Email failed for', u.username, ':', e.message);
+        await pool.query(`UPDATE submissions SET email_status='failed', email_error=$1 WHERE id=$2`, [e.message, subId]);
+      });
 
   } catch (e) {
     console.error('Submit error:', e);
@@ -974,6 +1005,17 @@ function adminHTML(cohorts, users, submissions, msg) {
     const completeLink = isExt
       ? `<a href="/admin/submissions/${s.id}/complete-ext" target="_blank" class="view-link" style="background:#F3E8FF;color:#7C3AED;border:1px solid #C4B5FD;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">Complete →</a>`
       : `<a href="/admin/submissions/${s.id}/complete" target="_blank" class="view-link" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">Complete →</a>`;
+    const emailStatus = s.email_status || 'pending';
+    const emailBadge = emailStatus === 'sent'
+      ? `<span title="Email delivered" style="color:#16a34a;font-size:0.85rem">✓ sent</span>`
+      : emailStatus === 'failed'
+      ? `<span title="${(s.email_error||'').replace(/"/g,'&quot;')}" style="color:#dc2626;font-size:0.85rem;cursor:help">✗ failed</span>`
+      : `<span style="color:#9ca3af;font-size:0.85rem">⏳ pending</span>`;
+    const retryBtn = emailStatus !== 'sent'
+      ? `<form method="POST" action="/admin/submissions/${s.id}/resend-email" style="margin:0">
+           <button type="submit" style="background:none;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.7rem;font-family:inherit">Retry</button>
+         </form>`
+      : '';
     return `
     <tr>
       <td><strong>${s.username}</strong>${vBadge}</td>
@@ -981,6 +1023,7 @@ function adminHTML(cohorts, users, submissions, msg) {
       <td>${s.group_name || '—'}</td>
       <td>${s.challenge_name || '—'}</td>
       <td>${fmtDt(s.submitted_at)}</td>
+      <td style="white-space:nowrap">${emailBadge}${retryBtn}</td>
       <td style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
         <a href="/admin/submissions/${s.id}/report" target="_blank" class="view-link" style="background:#EBF5FF;color:#004080;border:1px solid #BAD4F0;border-radius:4px;padding:2px 8px;text-decoration:none;font-size:0.75rem">CFO Report →</a>
         ${completeLink}
@@ -989,7 +1032,7 @@ function adminHTML(cohorts, users, submissions, msg) {
         </form>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="6" class="empty">No submissions yet</td></tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty">No submissions yet</td></tr>`;
 
   return `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -1032,7 +1075,10 @@ function adminHTML(cohorts, users, submissions, msg) {
     <div class="hdr-title">Admin Panel</div>
     <div class="hdr-sub">SustComp · AcpitConsulting</div>
   </div>
-  <a class="logout" href="/admin/logout">Sign out</a>
+  <div style="display:flex;align-items:center;gap:1.5rem">
+    <a href="/admin/test-email" style="color:rgba(255,255,255,0.55);font-size:0.78rem;text-decoration:none" title="Send a test email to verify Resend is working">Test email</a>
+    <a class="logout" href="/admin/logout">Sign out</a>
+  </div>
 </div>
 
 <div class="wrap">
@@ -1110,7 +1156,7 @@ function adminHTML(cohorts, users, submissions, msg) {
     <div class="panel-title">Submissions <span class="badge">${submissions.length}</span></div>
     <table>
       <thead><tr>
-        <th>Username</th><th>Cohort</th><th>Group</th><th>Challenge</th><th>Submitted</th><th>Report</th>
+        <th>Username</th><th>Cohort</th><th>Group</th><th>Challenge</th><th>Submitted</th><th>Email</th><th>Actions</th>
       </tr></thead>
       <tbody>${subRows}</tbody>
     </table>
