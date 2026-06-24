@@ -1234,8 +1234,12 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
         break;
       }
       if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
-      const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-      const json=JSON.parse(text.replace(/```json\n?|```\n?/g,'').trim());
+      const textBlocks=data.content.filter(b=>b.type==='text');
+      const raw=(textBlocks[textBlocks.length-1]?.text||textBlocks.map(b=>b.text).join('')).trim();
+      const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+      if(s===-1)throw new Error('No JSON in response');
+      const jsonStr=raw.slice(s,e+1).replace(/[\r\n\t]+/g,' ');
+      const json=JSON.parse(jsonStr);
       setAiBrief(json);
       setAiState('done');
     }catch(e){setAiError(e.message);setAiState('error');}
