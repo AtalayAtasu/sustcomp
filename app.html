@@ -262,8 +262,8 @@ const LEVERS=[
   {id:'combo', tag:'2d',    label:'Combination',                     desc:'Two or three levers working in parallel',                     bg:'#F6EDCC',tc:'#8B6414'},
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
-const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},mktSeg:'',profitPressure:'',sustSuccess:'',sth:STYPES.map(t=>mkSth(t.id)),oppDesc:'',lever:'',costData:{i:'',ii:''},wtpData:{i:'',ii:''},mktExData:{i:'',ii:''},mktNewData:{i:'',ii:''},comboLevers:[],comboAdditional:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
+const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:'',dr:{}});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},mktSeg:'',profitPressure:'',sustSuccess:'',sth:STYPES.map(t=>mkSth(t.id)),oppDesc:'',lever:'',costData:{i:'',ii:''},wtpData:{i:'',ii:''},mktExData:{i:'',ii:''},mktNewData:{i:'',ii:''},comboLevers:[],comboAdditional:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,baseRevenue:'',grossMargin:50,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -323,16 +323,29 @@ function Logo({dark}){
   );
 }
 
+/* ─── COMPUTE ANNUAL FROM DRIVERS ─── */
+function computeAnnual(s,revenue,margin){
+  const rev=parseFloat(revenue)||0;
+  const mgn=parseFloat(margin)||50;
+  const cogs=rev*(1-mgn/100);
+  const dr=s.dr||{};
+  if(s.id==='soc') return rev*(parseFloat(dr.inputPct)||0)/100+(parseFloat(dr.talentEur)||0)+(parseFloat(dr.envEur)||0);
+  if(s.id==='eco') return rev*(parseFloat(dr.volPct)||0)/100+rev*(parseFloat(dr.premPct)||0)/100+cogs*(parseFloat(dr.cogsNet)||0)/100;
+  if(s.id==='reg') return (parseFloat(dr.compEur)||0)+(parseFloat(dr.grantsEur)||0);
+  if(s.id==='inv') return parseFloat(dr.finEur)||0;
+  return parseFloat(s.annual)||0;
+}
+
 /* ─── WATERFALL ─── */
-function Waterfall({sth,capex,rate,horizon,curr}){
+function Waterfall({sth,capex,rate,horizon,curr,baseRevenue,grossMargin}){
   const cap=parseFloat(capex)||0;
   const segs=[];
   if(cap>0)segs.push({label:'CAPEX',value:-cap,color:'#C0392B',icon:null});
-  sth.filter(x=>x.on&&parseFloat(x.annual)>0).forEach(x=>{
+  sth.filter(x=>x.on&&computeAnnual(x,baseRevenue,grossMargin)>0).forEach(x=>{
     const t=STYPES.find(t=>t.id===x.id);
-    segs.push({label:t.label.split(' ')[0],value:parseFloat(x.annual)*af(rate,horizon),color:t.mid,icon:t.icon});
+    segs.push({label:t.label.split(' ')[0],value:computeAnnual(x,baseRevenue,grossMargin)*af(rate,horizon),color:t.mid,icon:t.icon});
   });
-  if(!segs.length)return<div style={{textAlign:'center',padding:'2rem',color:'rgba(255,255,255,0.22)',fontSize:'0.82rem'}}>Enter annual benefit values above to see the NPV+ waterfall</div>;
+  if(!segs.length)return<div style={{textAlign:'center',padding:'2rem',color:'rgba(255,255,255,0.22)',fontSize:'0.82rem'}}>Enter driver values above to see the NPV+ waterfall</div>;
   let run=0;
   const bars=segs.map(s=>{const bot=run;run+=s.value;return{...s,bot,top:run};});
   const total=run;
@@ -518,7 +531,7 @@ OUTPUT DISCIPLINE: Write all four sections in full. Do not add preamble, caveats
 
     const linfo=LEVERS.find(l=>l.id===st.lever);
     const cap=parseFloat(st.capex)||0;
-    const lines=st.sth.filter(x=>x.on).map(s=>({...s,ann:parseFloat(s.annual)||0}));
+    const lines=st.sth.filter(x=>x.on).map(s=>({...s,ann:computeAnnual(s,st.baseRevenue,st.grossMargin)}));
     const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
     const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
     const sthText=lines.map(s=>{const tp=STYPES.find(x=>x.id===s.id);return`${tp.label}: ${(s.opp||'').slice(0,100)}`;}).join(' | ');
@@ -627,7 +640,7 @@ function CFOReport({st, initialHtml, onHtmlChange, regenUsed, onRegenUsed}){
 
   const activeSth=st.sth.filter(x=>x.on);
   const cap=parseFloat(st.capex)||0;
-  const lines=activeSth.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const lines=activeSth.map(s=>({...s,ann:computeAnnual(s,st.baseRevenue,st.grossMargin)}));
   const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
   const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
   const totAnn=lines.reduce((a,x)=>a+x.ann,0);
@@ -1069,26 +1082,31 @@ Challenge their lever choice in light of the market and profit context above. Is
 function S3({st,set}){
   const upd=(k,v)=>set(s=>({...s,[k]:v}));
   const usth=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
+  const ustd=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,dr:{...(x.dr||{}),[k]:v}}:x)}));
   const [vh,setVh]=useState(5);
+  const [aiState,setAiState]=useState('idle');
+  const [aiError,setAiError]=useState('');
   const actv=st.sth.filter(x=>x.on);
   const cur=st.curr;
+  const rev=parseFloat(st.baseRevenue)||0;
+  const mgn=parseFloat(st.grossMargin)||50;
   const afV=af(st.rate,vh);
   const capN=parseFloat(st.capex)||0;
-  const totalAnn=actv.reduce((a,x)=>a+(parseFloat(x.annual)||0),0);
-  const npv5=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,5),0);
-  const npv10=-capN+actv.reduce((a,x)=>a+(parseFloat(x.annual)||0)*af(st.rate,10),0);
+  const totalAnn=actv.reduce((a,x)=>a+computeAnnual(x,rev,mgn),0);
+  const npv5=-capN+actv.reduce((a,x)=>a+computeAnnual(x,rev,mgn)*af(st.rate,5),0);
+  const npv10=-capN+actv.reduce((a,x)=>a+computeAnnual(x,rev,mgn)*af(st.rate,10),0);
 
   const sysPrompt=`SCOPE GUARDRAIL: This tool is designed exclusively for challenges with a clear environmental, social, or governance (ESG) dimension — such as carbon emissions, resource depletion, biodiversity loss, supply chain ethics, community impact, circular economy, or ESG-driven regulation. If the challenge or question does not have a meaningful ESG dimension, do not engage with the substance. Politely but firmly explain that this tool is scoped to sustainability strategy, and ask the participant to reframe their challenge around its environmental, social, or governance impact before you proceed.
 
 You are a sustainability strategy professor and former investment banker reviewing a group's NPV+ financial model. Challenge assumptions aggressively but constructively. Ask: What is driving that number? What would a skeptical CFO push back on? What is the single biggest assumption risk? Reference a comparable deal or investment case (e.g. Ørsted wind, Plastic Energy, Interface recycled carpets, Renault EV). Respond with exactly 5 numbered points, each a specific fact-based challenge or observation. No preamble, no sign-off, no general statements. Start directly with point 1. Hard limit: 300 words.`;
 
   const buildPrompt=()=>{
-    const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(parseFloat(x.annual)||0,cur)}/year`;}).join('\n');
+    const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);const ann=computeAnnual(x,rev,mgn);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(ann,cur)}/year`;}).join('\n');
     return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'unspecified'}) NPV+ model for "${st.fish.name}":
 
 MARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes: ${st.sustSuccess||'not specified'}
 
-CAPEX: ${capN>0?fmt(-capN,cur):'None'}
+Revenue base: ${rev>0?fmt(rev,cur):'not provided'} | Gross margin: ${mgn}% | CAPEX: ${capN>0?fmt(-capN,cur):'None'}
 Discount rate (WACC): ${st.rate}%
 
 Benefit lines:
@@ -1101,56 +1119,191 @@ CFO Pitch narrative: ${st.pitch||'not provided'}
 Challenge this financial model with the market context in mind. Are the benefit assumptions realistic given their profit environment and industry track record? What is the single most important question a CFO would ask? What are they missing? Reference a comparable case from their or an adjacent industry.`;
   };
 
+  const getStartingNumbers=async()=>{
+    setAiState('loading');setAiError('');
+    const sthList=actv.map(x=>STYPES.find(t=>t.id===x.id).label).join(', ');
+    const prompt=`You are helping an executive education participant build an NPV+ financial model for a sustainability strategy.
+
+Company/group: "${st.grp.name||'unnamed'}" | Industry: "${st.grp.industry||'not specified'}"
+Market: ${st.mktSeg||'not specified'}
+Sustainability challenge: "${st.fish.name||'not specified'}" — ${(st.fish.desc||'').slice(0,200)}
+Strategic lever: ${LEVERS.find(l=>l.id===st.lever)?.label||'not selected'}
+Opportunity: ${(st.oppDesc||'').slice(0,200)}
+Active stakeholder quadrants: ${sthList||'none'}
+Annual revenue: ${rev>0?fmt(rev,cur):'not provided'}
+Gross margin: ${mgn}%
+
+Use web search to find typical industry benchmarks for this type of sustainability initiative. Then return ONLY a valid JSON object (no markdown fences, no explanation outside the JSON) with this exact structure:
+{
+  "soc": {"inputPct": <number or null>, "talentEur": <number or null>, "envEur": <number or null>},
+  "eco": {"volPct": <number or null>, "premPct": <number or null>, "cogsNet": <number or null>},
+  "reg": {"compEur": <number or null>, "grantsEur": <number or null>},
+  "inv": {"finEur": <number or null>}
+}
+Only populate quadrants that are in the active list: ${sthList}. Use null for fields not applicable or where no reasonable benchmark exists. Percentages are plain numbers (e.g. 2 for 2%). EUR values are annual amounts — scale to the revenue provided if given, otherwise use absolute industry benchmark figures.`;
+
+    try{
+      let data,resp;
+      for(let attempt=0;attempt<3;attempt++){
+        resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'content-type':'application/json','x-api-key':_apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,system:'You are a financial analyst. Return only valid JSON, no markdown fences, no explanation.',tools:[{"type":"web_search_20250305","name":"web_search"}],messages:[{role:'user',content:prompt}]})
+        });
+        data=await resp.json();
+        if((resp.status===429||resp.status===529)&&attempt<2){await new Promise(r=>setTimeout(r,(attempt+1)*20000));continue;}
+        break;
+      }
+      if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+      const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+      const json=JSON.parse(text.replace(/```json\n?|```\n?/g,'').trim());
+      set(s=>({...s,sth:s.sth.map(x=>{
+        const vals=json[x.id];
+        if(!vals)return x;
+        const newDr={...(x.dr||{})};
+        Object.entries(vals).forEach(([k,v])=>{if(v!==null&&v!==undefined)newDr[k]=String(v);});
+        return{...x,dr:newDr};
+      })}));
+      setAiState('done');
+    }catch(e){setAiError(e.message);setAiState('error');}
+  };
+
+  const drOf=id=>actv.find(x=>x.id===id)?.dr||{};
+
+  const FieldPct=({id,fkey,label,hint})=>{
+    const val=drOf(id)[fkey]||'';
+    const eur=rev*(parseFloat(val)||0)/100;
+    return<div className="fld" style={{marginBottom:0}}>
+      <label>{label}</label>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{position:'relative',flex:'0 0 100px'}}>
+          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+        </div>
+        {rev>0&&<div style={{fontSize:'0.76rem',color:'#888',flex:1}}>≈ {fmt(eur,cur)}/yr</div>}
+      </div>
+      {hint&&<div className="fld-hint">{hint}</div>}
+    </div>;
+  };
+
+  const FieldCogsPct=({id,fkey,label,hint})=>{
+    const val=drOf(id)[fkey]||'';
+    const cogs=rev*(1-mgn/100);
+    const eur=cogs*(parseFloat(val)||0)/100;
+    const isNeg=parseFloat(val)<0;
+    return<div className="fld" style={{marginBottom:0}}>
+      <label>{label}</label>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <div style={{position:'relative',flex:'0 0 100px'}}>
+          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+        </div>
+        {rev>0&&<div style={{fontSize:'0.76rem',color:isNeg?'#c55':'#888',flex:1}}>≈ {fmt(eur,cur)}/yr {isNeg?'(added cost)':'(saving)'}</div>}
+      </div>
+      {hint&&<div className="fld-hint">{hint}</div>}
+    </div>;
+  };
+
+  const FieldEur=({id,fkey,label,hint})=>{
+    const val=drOf(id)[fkey]||'';
+    return<div className="fld" style={{marginBottom:0}}>
+      <label>{label} ({cur}/yr)</label>
+      <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="e.g. 500000" min="0"/>
+      {hint&&<div className="fld-hint">{hint}</div>}
+    </div>;
+  };
+
   return<div>
     <div className="card">
-
       <div className="ey">Question 3</div>
       <h2 className="ctitle">NPV+ Valuation</h2>
       <p className="csub">Quantify the value of each stakeholder-driven opportunity. The NPV+ framework builds a cumulative waterfall — starting from CAPEX, then adding the present value of each benefit stream — showing exactly which stakeholders tip the project positive, and when.</p>
       <div className="divl"/>
       <div className="g2">
         <div className="fld"><label>Currency</label><select value={cur} onChange={e=>upd('curr',e.target.value)}>{CURR.map(c=><option key={c}>{c}</option>)}</select></div>
-        <div className="fld"><label>CAPEX / upfront investment ({cur})</label><input type="number" value={st.capex} onChange={e=>upd('capex',e.target.value)} placeholder="0 if none" min="0"/><div className="fld-hint">Leave blank if no upfront investment required</div></div>
+        <div className="fld"><label>Annual revenue ({cur})</label><input type="number" value={st.baseRevenue||''} onChange={e=>upd('baseRevenue',e.target.value)} placeholder="e.g. 50000000"/><div className="fld-hint">Used to convert % inputs to {cur} amounts</div></div>
+      </div>
+      <div className="g2">
+        <div className="fld">
+          <label>Gross margin — {mgn}%</label>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'0.35rem'}}>
+            <input type="range" min="0" max="100" step="1" value={mgn} onChange={e=>upd('grossMargin',+e.target.value)} style={{flex:1}}/>
+            <span style={{fontSize:'0.82rem',fontWeight:500,color:'var(--blue)',minWidth:35}}>{mgn}%</span>
+          </div>
+          <div className="fld-hint">Used for COGS-based calculations</div>
+        </div>
+        <div className="fld">
+          <label>Discount rate (WACC) — {st.rate}%</label>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'0.35rem'}}>
+            <input type="range" min="2" max="20" step="1" value={st.rate} onChange={e=>upd('rate',+e.target.value)} style={{flex:1}}/>
+            <span style={{fontSize:'0.82rem',fontWeight:500,color:'var(--blue)',minWidth:35}}>{st.rate}%</span>
+          </div>
+        </div>
       </div>
       <div className="fld" style={{marginBottom:0}}>
-        <label>Discount rate (WACC) — {st.rate}%</label>
-        <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'0.35rem'}}>
-          <input type="range" min="2" max="20" step="1" value={st.rate} onChange={e=>upd('rate',+e.target.value)} style={{flex:1}}/>
-          <span style={{fontSize:'0.82rem',fontWeight:500,color:'var(--blue)',minWidth:35}}>{st.rate}%</span>
-        </div>
+        <label>CAPEX / upfront investment ({cur})</label>
+        <input type="number" value={st.capex} onChange={e=>upd('capex',e.target.value)} placeholder="0 if none" min="0"/>
+        <div className="fld-hint">Leave blank if no upfront investment required</div>
       </div>
     </div>
 
     <div className="card">
-
       <div className="ey">Stakeholder benefit lines</div>
       <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Quantify each opportunity</h2>
-      <p className="csub">For each active stakeholder from Q1, enter the estimated annual financial value. These become the NPV+ waterfall lines.</p>
+      <p className="csub">For each active stakeholder quadrant, enter the financial drivers of value. These feed the NPV+ waterfall.</p>
       <div className="divl"/>
+
+      <div style={{background:'#FFF8E7',border:'1px solid #F5C842',borderRadius:'var(--r)',padding:'0.85rem 1rem',marginBottom:'1.5rem'}}>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:'0.82rem',fontWeight:600,color:'#5A4000',marginBottom:'0.3rem'}}>✦ Get AI starting numbers</div>
+            <div style={{fontSize:'0.76rem',color:'#7A5C00',lineHeight:1.55}}>AI will use web research to suggest benchmark driver values based on your industry and opportunity. <strong>These are illustrative starting points only</strong> — numbers are AI-generated from public sources and may be inaccurate. You must verify and replace them with figures specific to your business.</div>
+          </div>
+          <div style={{flexShrink:0,paddingTop:'0.15rem'}}>
+            {aiState==='idle'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem'}} onClick={getStartingNumbers}>Get estimates</button>}
+            {aiState==='loading'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem',opacity:0.6}} disabled>Researching…</button>}
+            {aiState==='done'&&<span style={{fontSize:'0.76rem',color:'#2D6A4F',fontWeight:500}}>✓ Values pre-filled</span>}
+            {aiState==='error'&&<button className="btn btn-g" style={{fontSize:'0.78rem',padding:'0.4rem 0.9rem'}} onClick={getStartingNumbers}>Retry</button>}
+          </div>
+        </div>
+        {aiState==='done'&&<div style={{marginTop:'0.6rem',fontSize:'0.73rem',color:'#7A5C00',borderTop:'1px solid #F5C842',paddingTop:'0.5rem'}}>⚠ NPV+ framework: Atasu &amp; Peyer (INSEAD, 2025). Numbers sourced from public web data — treat as directional only and verify against your own financials.</div>}
+        {aiState==='error'&&<div style={{marginTop:'0.4rem',fontSize:'0.73rem',color:'#c33'}}>Error: {aiError}</div>}
+      </div>
+
       {actv.length===0&&<div style={{textAlign:'center',padding:'2rem',color:'#aaa',fontSize:'0.85rem'}}>No stakeholders activated in Q1. Go back and activate at least one.</div>}
+
       {actv.map(s=>{
-        const tp=STYPES.find(t=>t.id===s.id),ann=parseFloat(s.annual)||0,contrib=ann*afV;
+        const tp=STYPES.find(t=>t.id===s.id);
+        const ann=computeAnnual(s,rev,mgn);
+        const contrib=ann*afV;
         return<div key={s.id} className="nl">
           <div className="nl-hd">
             <div className="nl-left">
               <div className="nl-badge" style={{background:tp.light}}>{tp.icon}</div>
-              <div><div className="nl-nm" style={{color:tp.mid}}>{tp.label}</div><div className="nl-sub">{ann>0?`${fmt(ann,cur)}/year`:'Enter annual benefit below'}</div></div>
+              <div><div className="nl-nm" style={{color:tp.mid}}>{tp.label}</div><div className="nl-sub">{ann>0?`${fmt(ann,cur)}/year`:'Enter values below'}</div></div>
             </div>
             {ann>0&&<div className="nl-val" style={{color:tp.mid}}>{fmt(contrib,cur)}<span style={{fontSize:'0.7rem',fontWeight:400,color:'#999',marginLeft:4}}>NPV @ {vh}yr</span></div>}
           </div>
           <div className="nl-body">
-            <div className="fld" style={{marginTop:'0.75rem'}}><label>Benefit description</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label — e.g. EU Carbon tax savings, Recycling margin…'}/></div>
-            <div className="g2">
-              <div className="fld" style={{marginBottom:0}}>
-                <label>Annual benefit ({cur})</label>
-                <input type="number" value={s.annual} onChange={e=>usth(s.id,'annual',e.target.value)} placeholder="e.g. 500000" min="0"/>
-                <div className="fld-hint">Steady-state annual value once implemented</div>
-              </div>
-              <div className="fld" style={{marginBottom:0}}>
-                <label>NPV contribution @ {vh}yr</label>
-                <div style={{padding:'0.56rem 0.8rem',background:'var(--cream-d)',borderRadius:'var(--r)',fontSize:'0.875rem',fontWeight:500,color:ann>0?tp.mid:'#ccc',border:'1px solid var(--border)'}}>{ann>0?`${fmt(contrib,cur)}`:'—'}</div>
-                <div className="fld-hint">WACC {st.rate}% · {vh}-year horizon</div>
-              </div>
+            <div className="fld" style={{marginTop:'0.75rem',marginBottom:'0.5rem'}}><label>Benefit label</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label for this benefit line'}/></div>
+            <div style={{display:'grid',gap:'0.75rem',gridTemplateColumns:'1fr 1fr'}}>
+              {s.id==='soc'&&<>
+                <FieldPct id="soc" fkey="inputPct" label="Input/supply cost reduction" hint="% of annual revenue"/>
+                <FieldEur id="soc" fkey="talentEur" label="Talent savings — retention &amp; productivity" hint="Annual HR cost savings from lower turnover"/>
+                <FieldEur id="soc" fkey="envEur" label="Environmental savings — carbon, resources" hint="Carbon credits, avoided resource costs, etc."/>
+              </>}
+              {s.id==='eco'&&<>
+                <FieldPct id="eco" fkey="volPct" label="Volume growth from sustainability credentials" hint="% of annual revenue → incremental sales"/>
+                <FieldPct id="eco" fkey="premPct" label="Sustainable price premium captured" hint="% of annual revenue → additional margin"/>
+                <FieldCogsPct id="eco" fkey="cogsNet" label="Net COGS impact (+ savings / − added cost)" hint="% of COGS — use negative if sustainability raises unit costs"/>
+              </>}
+              {s.id==='reg'&&<>
+                <FieldEur id="reg" fkey="compEur" label="Regulatory compliance savings / avoided fines" hint="Annual cost avoidance from meeting or pre-empting regulations"/>
+                <FieldEur id="reg" fkey="grantsEur" label="Tax incentives, grants, or subsidies" hint="Annual value of public support or tax relief"/>
+              </>}
+              {s.id==='inv'&&<>
+                <FieldEur id="inv" fkey="finEur" label="Reduction in financing costs / better credit terms" hint="Annual saving from improved borrowing terms or ESG premium"/>
+              </>}
             </div>
           </div>
         </div>;
@@ -1164,7 +1317,7 @@ Challenge this financial model with the market context in mind. Are the benefit 
         </div>
         <div className="htabs">{[5,10].map(h=><button key={h} className={`htab ${vh===h?'on':''}`} onClick={()=>setVh(h)}>{h}-year</button>)}</div>
       </div>
-      <Waterfall sth={actv} capex={st.capex} rate={st.rate} horizon={vh} curr={cur}/>
+      <Waterfall sth={actv} capex={st.capex} rate={st.rate} horizon={vh} curr={cur} baseRevenue={rev} grossMargin={mgn}/>
       <div className="npv3">
         <div className="npv3b"><div className="npv3l">Annual net benefit</div><div className={`npv3v ${totalAnn>0?'pos':''}`}>{fmt(totalAnn,cur)}</div></div>
         <div className="npv3b"><div className="npv3l">NPV+ at 5 years</div><div className={`npv3v ${npv5>0?'pos':'neg'}`}>{fmt(npv5,cur)}</div></div>
@@ -1174,7 +1327,6 @@ Challenge this financial model with the market context in mind. Are the benefit 
     </div>
 
     <div className="card">
-
       <div className="ey">The pitch</div>
       <h2 className="ctitle" style={{fontSize:'1.3rem'}}>Present to your CFO or investor</h2>
       <p className="csub">Walk through the waterfall. Justify each benefit line. Is this a 5-year or 10-year story? What are the key risks?</p>
@@ -1194,7 +1346,7 @@ function S4({st,set}){
   const {grp,fish,sth,lever,ldetail,mseg,curr,capex,rate,pitch}=st;
   const actv=sth.filter(x=>x.on);
   const cap=parseFloat(capex)||0;
-  const lines=actv.map(s=>({...s,ann:parseFloat(s.annual)||0}));
+  const lines=actv.map(s=>({...s,ann:computeAnnual(s,st.baseRevenue,st.grossMargin)}));
   const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,5),0);
   const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(rate,10),0);
   const totAnn=lines.reduce((a,x)=>a+x.ann,0);
