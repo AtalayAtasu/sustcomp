@@ -489,17 +489,18 @@ app.post('/api/submit', requireLogin, async (req, res) => {
       await pool.query('DELETE FROM drafts WHERE user_id=$1', [u.id]);
     }
 
-    res.json({ success: true });
+    let emailError = null;
+    try {
+      await sendEmail({ ...d, username: u.username, cohortName: u.cohortName });
+      console.log(`Email sent for ${u.username}`);
+      await pool.query(`UPDATE submissions SET email_status='sent', email_error='' WHERE id=$1`, [subId]);
+    } catch (emailErr) {
+      emailError = emailErr.message;
+      console.error('Email failed for', u.username, ':', emailErr.message);
+      await pool.query(`UPDATE submissions SET email_status='failed', email_error=$1 WHERE id=$2`, [emailErr.message, subId]);
+    }
 
-    sendEmail({ ...d, username: u.username, cohortName: u.cohortName })
-      .then(async () => {
-        console.log(`Email sent for ${u.username}`);
-        await pool.query(`UPDATE submissions SET email_status='sent', email_error='' WHERE id=$1`, [subId]);
-      })
-      .catch(async e => {
-        console.error('Email failed for', u.username, ':', e.message);
-        await pool.query(`UPDATE submissions SET email_status='failed', email_error=$1 WHERE id=$2`, [e.message, subId]);
-      });
+    res.json({ success: true, emailSent: !emailError, emailError });
 
   } catch (e) {
     console.error('Submit error:', e);

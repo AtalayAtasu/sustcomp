@@ -1414,8 +1414,9 @@ function S6({st,set}){
   const totAnn=lines.reduce((a,x)=>a+x.ann,0);
   const linfo=LEVERS_EXT.find(l=>l.id===lever);
 
+  const [emailWarn,setEmailWarn]=useState('');
   const submitToInstructor=async()=>{
-    setSubmitting(true);setSubmitErr('');
+    setSubmitting(true);setSubmitErr('');setEmailWarn('');
     try{
       const resp=await fetch('/api/submit',{
         method:'POST',
@@ -1435,7 +1436,9 @@ function S6({st,set}){
         })
       });
       if(!resp.ok)throw new Error('Server error '+resp.status);
+      const json=await resp.json();
       setSubmitted(true);
+      if(!json.emailSent)setEmailWarn(json.emailError||'Email delivery failed — your submission was saved.');
     }catch(e){setSubmitErr(e.message);}
     setSubmitting(false);
   };
@@ -1600,7 +1603,8 @@ function S6({st,set}){
         {submitted?'✓ Presented to CFO':submitting?'Submitting…':'↑ Present to CFO'}
       </button>
       {submitErr&&<p style={{color:'#FC9D9D',fontSize:'0.8rem',marginTop:'0.75rem'}}>{submitErr}</p>}
-      {submitted&&<p style={{color:'rgba(255,255,255,0.5)',fontSize:'0.78rem',marginTop:'0.75rem'}}>Your extended analysis and CFO Report have been submitted. Good luck with your presentation!</p>}
+      {emailWarn&&<p style={{color:'#FCD34D',fontSize:'0.78rem',marginTop:'0.75rem',background:'rgba(0,0,0,0.2)',borderRadius:'6px',padding:'0.5rem 0.75rem'}}>⚠ Submission saved, but email delivery failed: {emailWarn}</p>}
+      {submitted&&!emailWarn&&<p style={{color:'rgba(255,255,255,0.5)',fontSize:'0.78rem',marginTop:'0.75rem'}}>Your extended analysis and CFO Report have been submitted. Good luck with your presentation!</p>}
     </div>
   </div>;
 }
