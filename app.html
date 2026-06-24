@@ -262,7 +262,7 @@ const LEVERS=[
 ];
 const CURR=['EUR','USD','GBP','CHF','SGD','JPY','CNY','BRL','INR'];
 const mkSth=id=>({id,on:false,who:'',pressure:'',impact:'',opp:'',blabel:'',annual:''});
-const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
+const init=()=>({grp:{name:'',industry:'',members:''},fish:{name:'',desc:''},mktSeg:'',profitPressure:'',sustSuccess:'',sth:STYPES.map(t=>mkSth(t.id)),lever:'',ldetail:'',mseg:'',curr:'EUR',capex:'',rate:8,pitch:'',chats:{q1:[],q2:[],q3:[]},chatRegenUsed:{q1:false,q2:false,q3:false},consultantReport:'',cfoHtml:'',consultantRegenUsed:false,cfoRegenUsed:false});
 
 /* ─── HELPERS ─── */
 function fmt(n,c){
@@ -529,6 +529,11 @@ COMPANY/GROUP: ${st.grp.name||'Executive team'} | Industry: ${st.grp.industry||'
 SUSTAINABILITY CHALLENGE: ${st.fish.name||'—'}
 ${(st.fish.desc||'').slice(0,400)}
 
+MARKET & INDUSTRY CONTEXT:
+- Market/segment: ${(st.mktSeg||'not specified').slice(0,200)}
+- Profit & growth outlook: ${(st.profitPressure||'not specified').slice(0,200)}
+- Sustainability initiatives that worked in this industry: ${(st.sustSuccess||'not specified').slice(0,250)}
+
 STRATEGIC LEVER CHOSEN: ${linfo?.label||'Not selected'}
 ${st.mseg?`Target segment: ${st.mseg}`:''}
 Strategic path: ${(st.ldetail||'').slice(0,300)}
@@ -634,13 +639,13 @@ CRITICAL OUTPUT DISCIPLINE: You have a hard token budget. All seven sections mus
     const digest=coachingDigest(st.chats||{});
     const digestSection=digest?`\nAI COACHING INSIGHTS FROM DIALOGUE (incorporate refined thinking from these exchanges into the report where relevant):\n${digest}\n`:'';
 
-    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo with exactly these seven sections, each tight and complete — 2–4 sentences or a short table per section:
+    const prompt=`Generate a professional CFO-ready executive memo.\n\nGROUP: ${st.grp.name||'Executive Team'} | Industry: ${st.grp.industry||'Not specified'}\nCHALLENGE: ${st.fish.name||'Sustainability Challenge'}\n${(st.fish.desc||'').slice(0,600)}\n\nMARKET & INDUSTRY CONTEXT:\n- Market/segment: ${(st.mktSeg||'—').slice(0,180)}\n- Profit & growth outlook: ${(st.profitPressure||'—').slice(0,180)}\n- Sustainability initiatives that worked in this industry: ${(st.sustSuccess||'—').slice(0,220)}\n\nSTAKEHOLDER ANALYSIS:\n${sthText||'Not completed.'}\n\nSTRATEGIC LEVER: ${linfo?.label||'Not selected'}\n${(st.lever==='wtp'||st.lever==='mkt'||st.lever==='combo')?`Market segment: ${st.mseg||'—'}\n`:''}Strategic path: ${cap(st.ldetail,400)}\n\nNPV+ MODEL (WACC: ${st.rate}%):\nCAPEX: ${cap>0?fmt(-cap,st.curr):'None'}\n${valText||'No benefit lines.'}\nAnnual benefit: ${fmt(totAnn,st.curr)} | NPV@5yr: ${fmt(npv5,st.curr)} | NPV@10yr: ${fmt(npv10,st.curr)}\nCFO Pitch: ${cap(st.pitch,300)}\n${digestSection}\nStructure the memo with exactly these seven sections, each tight and complete — 2–4 sentences or a short table per section:
 (1) Executive summary highlight-box: one-paragraph recommendation + NPV headline numbers.
-(2) Strategic materiality: why this challenge is urgent now (2–3 sentences, weave in coaching framing).
+(2) Strategic materiality: why this challenge is urgent now given the market/segment and profit outlook provided (2–3 sentences).
 (3) Stakeholder landscape: one sentence per relevant stakeholder group, note any coaching-surfaced gaps.
 (4) Strategic recommendation: the chosen lever, target segment if applicable, competitive logic (3 sentences max).
 (5) Financial case: NPV+ waterfall table then 2 sentences on key assumptions.
-(6) Risks and mitigants: 3 bullet points maximum.
+(6) Risks and mitigants: 3 bullet points maximum, informed by what has and has not worked in this industry.
 (7) Next steps: 3 bullet points with suggested owners.
 Complete all seven sections. Do not elaborate beyond the limits above.\n\nDate: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
 
@@ -759,6 +764,7 @@ function Sidebar({step,setStep}){
 function S0({st,set}){
   const sg=k=>e=>set(s=>({...s,grp:{...s.grp,[k]:e.target.value}}));
   const sf=k=>e=>set(s=>({...s,fish:{...s.fish,[k]:e.target.value}}));
+  const sm=k=>e=>set(s=>({...s,[k]:e.target.value}));
   return<div>
     <div className="card" style={{textAlign:'center',paddingBottom:'2rem'}}>
 
@@ -795,6 +801,24 @@ function S0({st,set}){
         <div className="fld" style={{marginBottom:0}}><label>Brief description</label><textarea value={st.fish.desc} onChange={sf('desc')} placeholder="What makes this a disruptor for your business? Why is it salient now?" style={{minHeight:80}}/></div>
       </div>
     </div>
+    <div className="card">
+      <div className="ey">Market &amp; industry context</div>
+      <h2 className="ctitle">Three questions before we start</h2>
+      <p className="csub">These answers sharpen every AI coaching response and both final reports — be as specific as possible.</p>
+      <div className="divl"/>
+      <div className="fld">
+        <label>1 · What market or market segment are you operating in? Where?</label>
+        <textarea value={st.mktSeg} onChange={sm('mktSeg')} placeholder="e.g. B2B industrial packaging, Western Europe; mid-market retail fashion, Southeast Asia…" style={{minHeight:72}}/>
+      </div>
+      <div className="fld">
+        <label>2 · Is your industry under profit pressure, or is the growth and profit outlook positive for the next three years?</label>
+        <textarea value={st.profitPressure} onChange={sm('profitPressure')} placeholder="e.g. Margins squeezed by energy costs and retailer pressure; or growth driven by infrastructure spend and favourable regulation…" style={{minHeight:72}}/>
+      </div>
+      <div className="fld" style={{marginBottom:0}}>
+        <label>3 · Which sustainability initiatives in your industry have enjoyed business success, and why?</label>
+        <textarea value={st.sustSuccess} onChange={sm('sustSuccess')} placeholder="e.g. Closed-loop take-back schemes that cut raw material cost; green-labelled product lines commanding a 10–15% price premium…" style={{minHeight:88}}/>
+      </div>
+    </div>
   </div>;
 }
 
@@ -809,9 +833,10 @@ You are a sustainability strategy professor facilitating an executive education 
 
   const buildPrompt=()=>{
     const actv=st.sth.filter(x=>x.on);
-    if(!actv.length)return`The group is analyzing challenge: "${st.fish.name||'unspecified'}" in industry: "${st.grp.industry||'unspecified'}". They have not yet activated any stakeholder categories. Briefly explain why completing a thorough stakeholder analysis is critical and ask what stakeholders are most relevant to their industry.`;
+    const ctx=`\nMARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes: ${st.sustSuccess||'not specified'}`;
+    if(!actv.length)return`The group is analyzing challenge: "${st.fish.name||'unspecified'}" in industry: "${st.grp.industry||'unspecified'}".\n${ctx}\n\nThey have not yet activated any stakeholder categories. Briefly explain why completing a thorough stakeholder analysis is critical and ask what stakeholders are most relevant to their industry and market context.`;
     const text=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`\n${tp.label}:\n  Who: ${x.who||'not specified'}\n  Pressure: ${x.pressure||'not specified'}\n  Business impact: ${x.impact||'not specified'}\n  Opportunity: ${x.opp||'not specified'}`;}).join('');
-    return`Group "${st.grp.name||'unnamed'}" from industry "${st.grp.industry||'unspecified'}" has analyzed stakeholders for their challenge: "${st.fish.name}".\n\nTheir analysis:${text}\n\nReview this analysis. Identify what they may have missed, challenge any vague or shallow answers with probing questions, and reference 1–2 comparable industry cases. Point out if the inactive stakeholder categories are actually material for their industry.`;
+    return`Group "${st.grp.name||'unnamed'}" from industry "${st.grp.industry||'unspecified'}" has analyzed stakeholders for their challenge: "${st.fish.name}".\n${ctx}\n\nTheir stakeholder analysis:${text}\n\nReview this analysis in light of their market context and profit outlook. Identify what they may have missed, challenge any vague or shallow answers, and reference 1–2 comparable industry cases. Point out if the inactive stakeholder categories are actually material given their specific market.`;
   };
 
   return<div>
@@ -861,11 +886,13 @@ You are a sustainability strategy professor reviewing strategic lever choices. C
     const linfo=LEVERS.find(l=>l.id===st.lever);
     return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'industry unspecified'}) is addressing challenge: "${st.fish.name}".
 
+MARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes in their industry: ${st.sustSuccess||'not specified'}
+
 Strategic lever selected: ${linfo?.label||'none selected'}
 ${showSeg?`Target market segment: ${st.mseg||'not specified'}`:''}
 Strategic path: ${st.ldetail||'not specified'}
 
-Challenge their lever choice and strategic thinking. Is this the right lever? Is the market segment specific enough? What are they missing or underestimating? Reference 1 comparable company case.`;
+Challenge their lever choice in light of the market and profit context above. Is this the right lever given the profit environment? Is the market segment specific enough? What are they missing or underestimating? Draw on the industry track record of sustainability initiatives they described. Reference 1 comparable company case.`;
   };
 
   return<div>
@@ -920,6 +947,8 @@ You are a sustainability strategy professor and former investment banker reviewi
     const lines=actv.map(x=>{const tp=STYPES.find(t=>t.id===x.id);return`${tp.label} — ${x.blabel||x.opp?.slice(0,40)||'benefit'}: ${fmt(parseFloat(x.annual)||0,cur)}/year`;}).join('\n');
     return`Group "${st.grp.name||'unnamed'}" (${st.grp.industry||'unspecified'}) NPV+ model for "${st.fish.name}":
 
+MARKET CONTEXT: ${st.mktSeg||'not specified'} | Profit outlook: ${st.profitPressure||'not specified'} | Past sustainability successes: ${st.sustSuccess||'not specified'}
+
 CAPEX: ${capN>0?fmt(-capN,cur):'None'}
 Discount rate (WACC): ${st.rate}%
 
@@ -930,7 +959,7 @@ NPV+ at 5 years: ${fmt(npv5,cur)}
 NPV+ at 10 years: ${fmt(npv10,cur)}
 CFO Pitch narrative: ${st.pitch||'not provided'}
 
-Challenge this financial model. What assumptions are most fragile? What is the single most important question a CFO would ask? What are they missing? Reference a comparable case.`;
+Challenge this financial model with the market context in mind. Are the benefit assumptions realistic given their profit environment and industry track record? What is the single most important question a CFO would ask? What are they missing? Reference a comparable case from their or an adjacent industry.`;
   };
 
   return<div>
@@ -1044,6 +1073,9 @@ function S4({st,set}){
           industry:grp.industry||'',
           challengeName:fish.name||'',
           challengeDesc:fish.desc||'',
+          mktSeg:st.mktSeg||'',
+          profitPressure:st.profitPressure||'',
+          sustSuccess:st.sustSuccess||'',
           lever,
           leverDetail:st.ldetail||'',
           marketSegment:st.mseg||'',
@@ -1173,7 +1205,7 @@ function App(){
 
   const local=loadLocal();
   const [step,setStep]=useState(local?.step||0);
-  const [st,set]=useState(local?.st||init());
+  const [st,set]=useState(local?.st?{...init(),...local.st}:init());
   const [saved,setSaved]=useState(false);
 
   // Save to localStorage on every change
@@ -1185,7 +1217,7 @@ function App(){
   useEffect(()=>{
     fetch('/api/draft').then(r=>r.json()).then(data=>{
       if(data.state){
-        set(data.state.st||init());
+        set({...init(),...(data.state.st||{})});
         setStep(data.state.step||0);
       } else {
         // Server has no draft (new account, reset, or deleted) — clear stale localStorage
