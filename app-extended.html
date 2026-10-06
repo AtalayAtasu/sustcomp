@@ -483,6 +483,13 @@ function S0({st,set}){
 }
 
 /* ─── STEP 1 · MARKET CONTEXT ─── */
+function QA({label,hint,value,onChange}){
+  return<div className="fld">
+    <label>{label}</label>
+    <textarea value={value} onChange={onChange} placeholder={hint} style={{minHeight:72}}/>
+  </div>;
+}
+
 function S1({st,set}){
   const umc=k=>e=>set(s=>({...s,mktCtx:{...s.mktCtx,[k]:e.target.value}}));
 
@@ -505,24 +512,17 @@ MARKET CONTEXT ANALYSIS:
 Review this market context analysis. Challenge shallow answers. Are these dynamics material to the sustainability challenge? What key structural forces are they missing or understating? Reference 1–2 comparable industry dynamics from real markets.`;
   };
 
-  const QA=({label,hint,k})=>(
-    <div className="fld">
-      <label>{label}</label>
-      <textarea value={st.mktCtx[k]||''} onChange={umc(k)} placeholder={hint} style={{minHeight:72}}/>
-    </div>
-  );
-
   return<div>
     <div className="card">
       <div className="ey">Section 1 — Industry Context</div>
       <h2 className="ctitle">Market Context</h2>
       <p className="csub">Before identifying sustainability opportunities, establish the structural context of your market. These answers will inform every subsequent step.</p>
       <div className="divl"/>
-      <QA k="a" label="1a. What market or market segment are you operating in? Where?" hint="Be specific: product category, geography, B2B vs B2C, competitive structure…"/>
-      <QA k="b" label="1b. Is your industry facing a significant increase in cost pressure?" hint="What is driving costs up? Raw materials, labour, energy, logistics, compliance? How significant is the pressure?"/>
-      <QA k="c" label="1c. Has price pressure in your market increased? Is it forcing competitors to compete on price?" hint="Are customers demanding lower prices? Are competitors undercutting? What is driving this dynamic?"/>
-      <QA k="d" label="1d. What is the growth outlook for the next three to five years?" hint="Is the market expanding, contracting, or stagnating? What are the key growth or decline drivers?"/>
-      <QA k="e" label="1e. Will regulation have a significant impact on the cost, price, and volume drivers of your market?" hint="Name specific regulations (current or expected) and explain how they will affect your cost structure, pricing power, and volumes."/>
+      <QA value={st.mktCtx.a||''} onChange={umc('a')} label="1a. What market or market segment are you operating in? Where?" hint="Be specific: product category, geography, B2B vs B2C, competitive structure…"/>
+      <QA value={st.mktCtx.b||''} onChange={umc('b')} label="1b. Is your industry facing a significant increase in cost pressure?" hint="What is driving costs up? Raw materials, labour, energy, logistics, compliance? How significant is the pressure?"/>
+      <QA value={st.mktCtx.c||''} onChange={umc('c')} label="1c. Has price pressure in your market increased? Is it forcing competitors to compete on price?" hint="Are customers demanding lower prices? Are competitors undercutting? What is driving this dynamic?"/>
+      <QA value={st.mktCtx.d||''} onChange={umc('d')} label="1d. What is the growth outlook for the next three to five years?" hint="Is the market expanding, contracting, or stagnating? What are the key growth or decline drivers?"/>
+      <QA value={st.mktCtx.e||''} onChange={umc('e')} label="1e. Will regulation have a significant impact on the cost, price, and volume drivers of your market?" hint="Name specific regulations (current or expected) and explain how they will affect your cost structure, pricing power, and volumes."/>
       <div className="fld" style={{marginBottom:0}}>
         <label>1f. Do you expect a positive profit outlook for your industry in the next three to five years?</label>
         <textarea value={st.mktCtx.f||''} onChange={umc('f')} placeholder="Why or why not? Consider margin trends, consolidation, structural forces…" style={{minHeight:72}}/>
@@ -843,6 +843,46 @@ function ResearchBrief({brief,actv,cur}){
 }
 
 /* ─── STEP 5 · NPV+ VALUATION ─── */
+function FieldPct({val,onChange,label,hint,rev,cur}){
+  const eur=rev*(parseFloat(val)||0)/100;
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label}</label>
+    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+      <div style={{position:'relative',flex:'0 0 100px'}}>
+        <input type="number" value={val} onChange={onChange} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+        <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+      </div>
+      {rev>0&&<div style={{fontSize:'0.76rem',color:'#888',flex:1}}>≈ {fmt(eur,cur)}/yr</div>}
+    </div>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
+function FieldCogsPct({val,onChange,label,hint,rev,mgn,cur}){
+  const cogs=rev*(1-mgn/100);
+  const eur=cogs*(parseFloat(val)||0)/100;
+  const isNeg=parseFloat(val)<0;
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label}</label>
+    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+      <div style={{position:'relative',flex:'0 0 100px'}}>
+        <input type="number" value={val} onChange={onChange} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+        <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+      </div>
+      {rev>0&&<div style={{fontSize:'0.76rem',color:isNeg?'#c55':'#888',flex:1}}>≈ {fmt(eur,cur)}/yr {isNeg?'(added cost)':'(saving)'}</div>}
+    </div>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
+function FieldEur({val,onChange,label,hint,cur}){
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label} ({cur}/yr)</label>
+    <input type="number" value={val} onChange={onChange} placeholder="e.g. 500000" min="0"/>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
 function S5({st,set}){
   const upd=(k,v)=>set(s=>({...s,[k]:v}));
   const usth=(id,k,v)=>set(s=>({...s,sth:s.sth.map(x=>x.id===id?{...x,[k]:v}:x)}));
@@ -953,49 +993,8 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
   };
 
   const drOf=id=>actv.find(x=>x.id===id)?.dr||{};
-
-  const FieldPct=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    const eur=rev*(parseFloat(val)||0)/100;
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label}</label>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{position:'relative',flex:'0 0 100px'}}>
-          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
-          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
-        </div>
-        {rev>0&&<div style={{fontSize:'0.76rem',color:'#888',flex:1}}>≈ {fmt(eur,cur)}/yr</div>}
-      </div>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
-
-  const FieldCogsPct=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    const cogs=rev*(1-mgn/100);
-    const eur=cogs*(parseFloat(val)||0)/100;
-    const isNeg=parseFloat(val)<0;
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label}</label>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{position:'relative',flex:'0 0 100px'}}>
-          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
-          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
-        </div>
-        {rev>0&&<div style={{fontSize:'0.76rem',color:isNeg?'#c55':'#888',flex:1}}>≈ {fmt(eur,cur)}/yr {isNeg?'(added cost)':'(saving)'}</div>}
-      </div>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
-
-  const FieldEur=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label} ({cur}/yr)</label>
-      <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="e.g. 500000" min="0"/>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
+  const fp=(id,fkey)=>({val:drOf(id)[fkey]||'',onChange:e=>ustd(id,fkey,e.target.value),rev,mgn,cur});
+  const fe=(id,fkey)=>({val:drOf(id)[fkey]||'',onChange:e=>ustd(id,fkey,e.target.value),cur});
 
   return<div>
     <div className="card">
@@ -1075,21 +1074,21 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
             <div className="fld" style={{marginTop:'0.75rem',marginBottom:'0.5rem'}}><label>Benefit label</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label for this benefit line'}/></div>
             <div style={{display:'grid',gap:'0.75rem',gridTemplateColumns:'1fr 1fr'}}>
               {s.id==='soc'&&<>
-                <FieldPct id="soc" fkey="inputPct" label="Input/supply cost reduction" hint="% of annual revenue"/>
-                <FieldEur id="soc" fkey="talentEur" label="Talent savings — retention &amp; productivity" hint="Annual HR cost savings from lower turnover"/>
-                <FieldEur id="soc" fkey="envEur" label="Environmental savings — carbon, resources" hint="Carbon credits, avoided resource costs, etc."/>
+                <FieldPct {...fp('soc','inputPct')} label="Input/supply cost reduction" hint="% of annual revenue"/>
+                <FieldEur {...fe('soc','talentEur')} label="Talent savings — retention &amp; productivity" hint="Annual HR cost savings from lower turnover"/>
+                <FieldEur {...fe('soc','envEur')} label="Environmental savings — carbon, resources" hint="Carbon credits, avoided resource costs, etc."/>
               </>}
               {s.id==='eco'&&<>
-                <FieldPct id="eco" fkey="volPct" label="Volume growth from sustainability credentials" hint="% of annual revenue → incremental sales"/>
-                <FieldPct id="eco" fkey="premPct" label="Sustainable price premium captured" hint="% of annual revenue → additional margin"/>
-                <FieldCogsPct id="eco" fkey="cogsNet" label="Net COGS impact (+ savings / − added cost)" hint="% of COGS — use negative if sustainability raises unit costs"/>
+                <FieldPct {...fp('eco','volPct')} label="Volume growth from sustainability credentials" hint="% of annual revenue → incremental sales"/>
+                <FieldPct {...fp('eco','premPct')} label="Sustainable price premium captured" hint="% of annual revenue → additional margin"/>
+                <FieldCogsPct {...fp('eco','cogsNet')} label="Net COGS impact (+ savings / − added cost)" hint="% of COGS — use negative if sustainability raises unit costs"/>
               </>}
               {s.id==='reg'&&<>
-                <FieldEur id="reg" fkey="compEur" label="Regulatory compliance savings / avoided fines" hint="Annual cost avoidance from meeting or pre-empting regulations"/>
-                <FieldEur id="reg" fkey="grantsEur" label="Tax incentives, grants, or subsidies" hint="Annual value of public support or tax relief"/>
+                <FieldEur {...fe('reg','compEur')} label="Regulatory compliance savings / avoided fines" hint="Annual cost avoidance from meeting or pre-empting regulations"/>
+                <FieldEur {...fe('reg','grantsEur')} label="Tax incentives, grants, or subsidies" hint="Annual value of public support or tax relief"/>
               </>}
               {s.id==='inv'&&<>
-                <FieldEur id="inv" fkey="finEur" label="Reduction in financing costs / better credit terms" hint="Annual saving from improved borrowing terms or ESG premium"/>
+                <FieldEur {...fe('inv','finEur')} label="Reduction in financing costs / better credit terms" hint="Annual saving from improved borrowing terms or ESG premium"/>
               </>}
             </div>
           </div>
@@ -1399,6 +1398,54 @@ ${html}
   );
 }
 
+function SubQGrid({fields,data}){
+  return<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem',marginTop:'0.875rem'}}>
+    {fields.map(f=>{
+      const shortLabel=f.label.includes('—')?f.label.split('—').slice(1).join('—').trim():f.label;
+      return<div key={f.key}>
+        <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{shortLabel}</div>
+        <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{data[f.key]||<em style={{color:'#ccc'}}>—</em>}</div>
+      </div>;
+    })}
+  </div>;
+}
+
+function SumRow({label,value}){
+  return<div style={{marginBottom:'0.5rem'}}>
+    <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{label}</div>
+    <div style={{fontSize:'0.84rem',lineHeight:1.55,color:'#1A1A1A'}}>{value||<em style={{color:'#ccc'}}>—</em>}</div>
+  </div>;
+}
+
+function LeverSummary({linfo,lever,st}){
+  if(!linfo)return<em style={{color:'#ccc'}}>Not selected</em>;
+  const badge=<span style={{display:'inline-block',padding:'0.28rem 0.85rem',borderRadius:20,fontSize:'0.79rem',fontWeight:500,background:linfo.bg,color:linfo.tc,marginBottom:'0.875rem'}}>{linfo.label}</span>;
+  const comboSub=id=>{
+    if(!st.comboLevers.includes(id))return null;
+    const map={cost:['Cost Reduction','#B45309',COST_FIELDS,st.costData],wtp:['WTP Creation','#2D6A4F',WTP_FIELDS,st.wtpData],mktEx:['New Customers','#1565C0',MKT_EX_FIELDS,st.mktExData],mktNew:['New Market','#6B21A8',MKT_NEW_FIELDS,st.mktNewData]};
+    const [label,color,fields,data]=map[id];
+    return<div key={id} style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
+      <div style={{fontSize:'0.75rem',fontWeight:600,color:color,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:'0.5rem'}}>{label}</div>
+      <SubQGrid fields={fields} data={data}/>
+    </div>;
+  };
+  return<div>
+    {badge}
+    {lever==='cost'&&<SubQGrid fields={COST_FIELDS} data={st.costData}/>}
+    {lever==='wtp'&&<SubQGrid fields={WTP_FIELDS} data={st.wtpData}/>}
+    {lever==='mktEx'&&<SubQGrid fields={MKT_EX_FIELDS} data={st.mktExData}/>}
+    {lever==='mktNew'&&<SubQGrid fields={MKT_NEW_FIELDS} data={st.mktNewData}/>}
+    {lever==='combo'&&<>
+      <div style={{fontSize:'0.79rem',color:'#666',marginBottom:'0.5rem'}}>Levers combined: {st.comboLevers.map(id=>LEVERS_EXT.find(l=>l.id===id)?.label).join(', ')||'—'}</div>
+      {['cost','wtp','mktEx','mktNew'].map(comboSub)}
+      {st.comboAdditional&&<div style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
+        <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>Additional combined wins (2d.ii)</div>
+        <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{st.comboAdditional}</div>
+      </div>}
+    </>}
+  </div>;
+}
+
 /* ─── STEP 6 · SUMMARY & REPORT ─── */
 function S6({st,set}){
   const [submitted,setSubmitted]=useState(false);
@@ -1443,54 +1490,6 @@ function S6({st,set}){
     setSubmitting(false);
   };
 
-  /* helper: render lever sub-questions in summary */
-  const SubQGrid=({fields,data})=>(
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem',marginTop:'0.875rem'}}>
-      {fields.map(f=>{
-        const shortLabel=f.label.includes('—')?f.label.split('—').slice(1).join('—').trim():f.label;
-        return<div key={f.key}>
-          <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{shortLabel}</div>
-          <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{data[f.key]||<em style={{color:'#ccc'}}>—</em>}</div>
-        </div>;
-      })}
-    </div>
-  );
-
-  const LeverSummary=()=>{
-    if(!linfo)return<em style={{color:'#ccc'}}>Not selected</em>;
-    const badge=<span style={{display:'inline-block',padding:'0.28rem 0.85rem',borderRadius:20,fontSize:'0.79rem',fontWeight:500,background:linfo.bg,color:linfo.tc,marginBottom:'0.875rem'}}>{linfo.label}</span>;
-    const comboSub=id=>{
-      if(!st.comboLevers.includes(id))return null;
-      const map={cost:['Cost Reduction','#B45309',COST_FIELDS,st.costData],wtp:['WTP Creation','#2D6A4F',WTP_FIELDS,st.wtpData],mktEx:['New Customers','#1565C0',MKT_EX_FIELDS,st.mktExData],mktNew:['New Market','#6B21A8',MKT_NEW_FIELDS,st.mktNewData]};
-      const [label,color,fields,data]=map[id];
-      return<div key={id} style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
-        <div style={{fontSize:'0.75rem',fontWeight:600,color:color,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:'0.5rem'}}>{label}</div>
-        <SubQGrid fields={fields} data={data}/>
-      </div>;
-    };
-    return<div>
-      {badge}
-      {lever==='cost'&&<SubQGrid fields={COST_FIELDS} data={st.costData}/>}
-      {lever==='wtp'&&<SubQGrid fields={WTP_FIELDS} data={st.wtpData}/>}
-      {lever==='mktEx'&&<SubQGrid fields={MKT_EX_FIELDS} data={st.mktExData}/>}
-      {lever==='mktNew'&&<SubQGrid fields={MKT_NEW_FIELDS} data={st.mktNewData}/>}
-      {lever==='combo'&&<>
-        <div style={{fontSize:'0.79rem',color:'#666',marginBottom:'0.5rem'}}>Levers combined: {st.comboLevers.map(id=>LEVERS_EXT.find(l=>l.id===id)?.label).join(', ')||'—'}</div>
-        {['cost','wtp','mktEx','mktNew'].map(comboSub)}
-        {st.comboAdditional&&<div style={{marginTop:'1rem',paddingTop:'0.875rem',borderTop:'1px solid var(--border)'}}>
-          <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>Additional combined wins (2d.ii)</div>
-          <div style={{fontSize:'0.84rem',lineHeight:1.55}}>{st.comboAdditional}</div>
-        </div>}
-      </>}
-    </div>;
-  };
-
-  const SumRow=({label,value})=>(
-    <div style={{marginBottom:'0.5rem'}}>
-      <div style={{fontSize:'0.7rem',color:'#999',marginBottom:'0.18rem'}}>{label}</div>
-      <div style={{fontSize:'0.84rem',lineHeight:1.55,color:'#1A1A1A'}}>{value||<em style={{color:'#ccc'}}>—</em>}</div>
-    </div>
-  );
 
   return<div>
     {/* ── Header ── */}
@@ -1559,7 +1558,7 @@ function S6({st,set}){
           <div style={{fontSize:'0.65rem',fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--gold)',marginBottom:'0.35rem'}}>Triple-Win Vision</div>
           <div style={{fontSize:'0.88rem',color:'rgba(255,255,255,0.88)',lineHeight:1.65}}>{vision}</div>
         </div>}
-        <LeverSummary/>
+        <LeverSummary linfo={linfo} lever={lever} st={st}/>
       </div>
     </div>
 
