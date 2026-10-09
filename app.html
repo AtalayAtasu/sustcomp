@@ -1238,13 +1238,17 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
       const raw=(textBlocks[textBlocks.length-1]?.text||textBlocks.map(b=>b.text).join('')).trim();
       const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
       if(s===-1)throw new Error('No JSON in response');
-      const jsonStr=raw.slice(s,e+1).replace(/[\x00-\x1F\x7F]/g,' ');
-      let json;
-      try{json=JSON.parse(jsonStr);}
-      catch(parseErr){
-        try{json=JSON.parse(jsonStr.replace(/\s+/g,' '));}
-        catch(e2){throw new Error('JSON parse failed: '+parseErr.message);}
-      }
+      const repairJson=str=>{
+        let t=str.replace(/[\x00-\x1F\x7F]/g,' ');
+        try{return JSON.parse(t);}catch(e1){}
+        t=t.replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g,'$1"$2":');
+        try{return JSON.parse(t);}catch(e2){}
+        t=t.replace(/\s+/g,' ');
+        try{return JSON.parse(t);}catch(e3){}
+        t=t.replace(/,\s*([}\]])/g,'$1');
+        try{return JSON.parse(t);}catch(e4){throw new Error('JSON parse failed: '+e4.message);}
+      };
+      const json=repairJson(raw.slice(s,e+1));
       setAiBrief(json);
       setAiState('done');
     }catch(e){setAiError(e.message);setAiState('error');}
