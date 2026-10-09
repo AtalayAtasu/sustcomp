@@ -271,10 +271,13 @@ app.post('/admin/users/:id/reset', requireAdmin, async (req, res) => {
   res.redirect('/admin?msg=User+progress+reset');
 });
 
-// Admin — inspect draft state for a user (by username)
+// Admin — inspect draft state for a user (by username, case-insensitive)
 app.get('/admin/draft/:username', requireAdmin, async (req, res) => {
-  const u = await pool.query('SELECT id FROM users WHERE username=$1', [req.params.username]);
-  if (!u.rows[0]) return res.status(404).json({ error: 'User not found' });
+  const u = await pool.query('SELECT id FROM users WHERE lower(username)=lower($1)', [req.params.username]);
+  if (!u.rows[0]) {
+    const all = await pool.query('SELECT username FROM users ORDER BY username');
+    return res.status(404).json({ error: 'User not found', available_usernames: all.rows.map(r=>r.username) });
+  }
   const uid = u.rows[0].id;
   const [basic, ext] = await Promise.all([
     pool.query('SELECT state, updated_at FROM drafts WHERE user_id=$1', [uid]),
