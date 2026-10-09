@@ -271,6 +271,22 @@ app.post('/admin/users/:id/reset', requireAdmin, async (req, res) => {
   res.redirect('/admin?msg=User+progress+reset');
 });
 
+// Admin — inspect draft state for a user (by username)
+app.get('/admin/draft/:username', requireAdmin, async (req, res) => {
+  const u = await pool.query('SELECT id FROM users WHERE username=$1', [req.params.username]);
+  if (!u.rows[0]) return res.status(404).json({ error: 'User not found' });
+  const uid = u.rows[0].id;
+  const [basic, ext] = await Promise.all([
+    pool.query('SELECT state, updated_at FROM drafts WHERE user_id=$1', [uid]),
+    pool.query('SELECT state, updated_at FROM drafts_ext WHERE user_id=$1', [uid]),
+  ]);
+  res.json({
+    username: req.params.username,
+    basic:  basic.rows[0]  ? { updated_at: basic.rows[0].updated_at,  step: basic.rows[0].state?.step,  keys: Object.keys(basic.rows[0].state?.st  || {}) } : null,
+    ext:    ext.rows[0]    ? { updated_at: ext.rows[0].updated_at,    step: ext.rows[0].state?.step,    keys: Object.keys(ext.rows[0].state?.st    || {}) } : null,
+  });
+});
+
 // Submissions — view CFO report only
 app.get('/admin/submissions/:id/report', requireAdmin, async (req, res) => {
   const r = await pool.query(
