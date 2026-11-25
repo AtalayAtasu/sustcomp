@@ -249,6 +249,7 @@ input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer}
 .coach-ttl{font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:600;color:var(--navy)}
 .coach-sub{font-size:0.72rem;color:#5C5C5C;margin-top:1px}
 .coach-toggle{font-size:0.74rem;color:#444;display:flex;align-items:center;gap:5px;cursor:pointer}
+.voice-sel{width:auto;max-width:190px;padding:0.22rem 1.8rem 0.22rem 0.55rem;font-size:0.74rem;border-radius:14px;background-position:right 0.55rem center}
 .coach-link{background:none;border:none;font-family:inherit;font-size:0.74rem;color:var(--blue);cursor:pointer;text-decoration:underline;padding:0}
 .coach-body{padding:1.1rem 1.25rem}
 .coach-intro p{font-size:0.84rem;color:#444;line-height:1.6;margin-bottom:0.85rem}
@@ -480,20 +481,67 @@ function cleanForSpeech(t){
   return (t||'').replace(/<[^>]+>/g,' ').replace(/\*\*|__|#+\s/g,'').replace(/^\s*[-•]\s+/gm,'').replace(/\s+/g,' ').trim();
 }
 
+// Rank English voices so neural ones (Edge "Natural", Google online, Apple Premium/Enhanced) win over robotic ones.
+function voiceScore(v){
+  const n=v.name;
+  let s=0;
+  if(/natural|neural/i.test(n))s+=100;
+  if(/premium|enhanced/i.test(n))s+=70;
+  if(/^google/i.test(n))s+=50;
+  if(/online/i.test(n))s+=20;
+  if(/samantha|daniel|serena|karen|moira|tessa|ava|evan|zoe/i.test(n))s+=15;
+  if(/^en-(gb|us)/i.test(v.lang))s+=5;
+  if(/compact|espeak|zira|david|mark|hazel|fred|albert|bad news|bells|boing|bubbles|cellos|jester|organ|trinoids|whisper|wobble|zarvox/i.test(n))s-=60;
+  return s;
+}
+let _voices=[];
+function loadVoices(){
+  _voices=TTS_OK?speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith('en')).sort((a,b)=>voiceScore(b)-voiceScore(a)):[];
+}
+if(TTS_OK){loadVoices();speechSynthesis.addEventListener('voiceschanged',loadVoices);}
+const VOICE_KEY='sustcomp_coach_voice';
+function chosenVoice(){
+  let name='';
+  try{name=localStorage.getItem(VOICE_KEY)||'';}catch(e){}
+  return _voices.find(v=>v.name===name)||_voices[0]||null;
+}
+
 function speak(text,onEnd){
   if(!TTS_OK){onEnd&&onEnd();return;}
   speechSynthesis.cancel();
   const parts=cleanForSpeech(text).split(/(?<=[.!?])\s+/).filter(Boolean);
   if(!parts.length){onEnd&&onEnd();return;}
-  const voices=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith('en'));
-  const voice=voices.find(v=>/natural|google|samantha|daniel|serena/i.test(v.name))||voices[0]||null;
+  const voice=chosenVoice();
+  const natural=voice&&voiceScore(voice)>=50;
   parts.forEach((p,i)=>{
     const u=new SpeechSynthesisUtterance(p);
-    if(voice)u.voice=voice;
-    u.rate=1.03;
+    if(voice){u.voice=voice;u.lang=voice.lang;}
+    u.rate=natural?1.0:0.95;
     if(i===parts.length-1){u.onend=()=>onEnd&&onEnd();u.onerror=()=>onEnd&&onEnd();}
     speechSynthesis.speak(u);
   });
+}
+
+function VoicePicker(){
+  const [voices,setVoices]=useState(_voices);
+  const [sel,setSel]=useState(()=>chosenVoice()?.name||'');
+  useEffect(()=>{
+    if(!TTS_OK)return;
+    const h=()=>{loadVoices();setVoices(_voices.slice());setSel(chosenVoice()?.name||'');};
+    h();
+    speechSynthesis.addEventListener('voiceschanged',h);
+    return()=>speechSynthesis.removeEventListener('voiceschanged',h);
+  },[]);
+  if(!TTS_OK||!voices.length)return null;
+  const pick=name=>{
+    setSel(name);
+    try{localStorage.setItem(VOICE_KEY,name);}catch(e){}
+    speak("Hello, I'm your sustainability strategy coach. Let's get started.");
+  };
+  const short=v=>v.name.replace(/^Microsoft\s+/,'').replace(/\s*-\s*English.*$/,'').replace(/\s+Online/,'')+(voiceScore(v)>=50?' ★':'');
+  return<select className="voice-sel" value={sel} onChange={e=>pick(e.target.value)} title="Choose the coach's voice (★ = natural-sounding)">
+    {voices.map(v=><option key={v.name} value={v.name}>{short(v)}</option>)}
+  </select>;
 }
 
 function SpeakButton({text,dark}){
@@ -744,6 +792,7 @@ function VoiceCoach({step,st,set}){
       </div>
       <div style={{display:'flex',alignItems:'center',gap:'0.75rem'}}>
         {TTS_OK&&<label className="coach-toggle"><input type="checkbox" checked={autoSpeak} onChange={e=>{setAutoSpeak(e.target.checked);if(!e.target.checked)speechSynthesis.cancel();}}/> Speak replies</label>}
+        {TTS_OK&&autoSpeak&&<VoicePicker/>}
         {started&&<button className="coach-link" onClick={restart}>Restart</button>}
         <button className="coach-link" onClick={()=>setOpen(o=>!o)}>{open?'Hide':'Show'}</button>
       </div>
@@ -752,6 +801,7 @@ function VoiceCoach({step,st,set}){
       {!started&&<div className="coach-intro">
         <p>The coach will ask your team questions for this stage, challenge vague answers, and draft each field for you. Nothing goes into the form until you accept it, and you can still type directly in any box below.</p>
         {!VOICE_OK&&<p className="coach-warn">Voice input needs Chrome or Edge. In this browser you can type your answers to the coach instead.</p>}
+        {TTS_OK&&<p style={{fontSize:'0.76rem',color:'#777'}}>Tip: Microsoft Edge has the most natural-sounding coach voices. You can switch voice with the selector above (★ marks natural-sounding ones).</p>}
         <button className="btn btn-p" style={{fontSize:'0.85rem'}} disabled={busy} onClick={()=>send('We are ready to start this stage. Please begin.')}>{busy?'Starting…':'▶ Start the conversation'}</button>
       </div>}
       {started&&<div className="coach-log">
