@@ -1615,7 +1615,9 @@ function App(){
     try{localStorage.setItem(DKEY,JSON.stringify({step,st}));}catch(e){}
   },[st,step]);
 
-  // On mount: fetch server draft and restore (server is authoritative across devices)
+  // On mount: fetch server draft and restore (server is authoritative across devices).
+  // Nothing is saved until this load finishes, so a stale local copy can't overwrite the server draft.
+  const loadedRef=useRef(false);
   useEffect(()=>{
     fetch('/api/draft').then(r=>r.json()).then(data=>{
       if(data.state){
@@ -1626,11 +1628,12 @@ function App(){
         set(init());setStep(0);
         try{localStorage.removeItem(DKEY);}catch(e){}
       }
-    }).catch(()=>{});
+    }).catch(()=>{}).finally(()=>{loadedRef.current=true;});
   },[]);
 
   // Save to server immediately when step changes
   useEffect(()=>{
+    if(!loadedRef.current)return;
     setSaved(false);
     fetch('/api/draft',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
       .then(()=>setSaved(true)).catch(()=>{});
@@ -1638,6 +1641,7 @@ function App(){
 
   // Save to server 2 seconds after user stops typing
   useEffect(()=>{
+    if(!loadedRef.current)return;
     const t=setTimeout(()=>{
       fetch('/api/draft',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
         .then(()=>setSaved(true)).catch(()=>{});

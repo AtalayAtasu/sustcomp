@@ -1632,20 +1632,24 @@ function App(){
 
   useEffect(()=>{try{localStorage.setItem(DKEY,JSON.stringify({step,st}));}catch(e){};},[st,step]);
 
+  // Nothing is saved until the server draft has loaded, so a stale local copy can't overwrite it.
+  const loadedRef=useRef(false);
   useEffect(()=>{
     fetch('/api/draft/ext').then(r=>r.json()).then(data=>{
       if(data.state){set(data.state.st||initExt());setStep(data.state.step||0);}
       else{set(initExt());setStep(0);try{localStorage.removeItem(DKEY);}catch(e){}}
-    }).catch(()=>{});
+    }).catch(()=>{}).finally(()=>{loadedRef.current=true;});
   },[]);
 
   useEffect(()=>{
+    if(!loadedRef.current)return;
     setSaved(false);
     fetch('/api/draft/ext',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
       .then(()=>setSaved(true)).catch(()=>{});
   },[step]);
 
   useEffect(()=>{
+    if(!loadedRef.current)return;
     const t=setTimeout(()=>{
       fetch('/api/draft/ext',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
         .then(()=>setSaved(true)).catch(()=>{});

@@ -1106,7 +1106,7 @@ function AIChat({stageLabel, systemPrompt, buildPrompt, onUpdate, initialMsgs, r
 }
 
 /* ─── EXTRACT COACHING DIGEST ─── */
-function coachingDigest(chats){
+function coachingDigest(chats,coach){
   const extract=(msgs,label)=>{
     const aiMsgs=msgs.filter((m,i)=>m.role==='assistant'&&i>0);
     if(!aiMsgs.length) return '';
@@ -1114,9 +1114,17 @@ function coachingDigest(chats){
     const last=aiMsgs[aiMsgs.length-1].content.slice(0,800);
     return `\n--- AI Coaching: ${label} ---\n${last}`;
   };
-  const full=[extract(chats.q1||[],'Stakeholder Analysis'), extract(chats.q2||[],'Strategic Levers'), extract(chats.q3||[],'NPV+ Valuation')].filter(Boolean).join('\n');
-  // Hard cap at 2400 chars total
-  return full.slice(0,2400);
+  // The coach's spoken challenges per stage (its turns are short; keep each one, capped per stage).
+  const fromCoach=(step,label)=>{
+    const said=((coach||{})[step]?.msgs||[]).filter(m=>m.role==='assistant').map(m=>'- '+(m.display||'').slice(0,280));
+    if(!said.length)return '';
+    return `\n--- AI Coach conversation: ${label} ---\n${said.join('\n').slice(0,1100)}`;
+  };
+  const full=[
+    fromCoach(0,'Group & challenge'),fromCoach(1,'Stakeholder Analysis'),fromCoach(2,'Strategic Levers'),fromCoach(3,'NPV+ Valuation'),
+    extract(chats.q1||[],'Stakeholder Analysis'), extract(chats.q2||[],'Strategic Levers'), extract(chats.q3||[],'NPV+ Valuation'),
+  ].filter(Boolean).join('\n');
+  return full.slice(0,5000);
 }
 
 /* ─── AI CONSULTANT ─── */
@@ -1165,7 +1173,7 @@ OUTPUT DISCIPLINE: Write all four sections in full. Do not add preamble, caveats
     const npv5=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,5),0);
     const npv10=-cap+lines.reduce((a,x)=>a+x.ann*af(st.rate,10),0);
     const sthText=lines.map(s=>{const tp=STYPES.find(x=>x.id===s.id);return`${tp.label}: ${(s.opp||'').slice(0,100)}`;}).join(' | ');
-    const digest=coachingDigest(st.chats||{});
+    const digest=coachingDigest(st.chats||{},st.coach||{});
     const c=(s,n)=>(s||'').slice(0,n);
     let leverDetail='';
     if(st.lever==='cost')leverDetail=`Immediacy: "${c(st.costData?.i,180)}" | Advantages/gaps: "${c(st.costData?.ii,180)}"`;
@@ -1275,7 +1283,7 @@ CRITICAL OUTPUT DISCIPLINE: You have a hard token budget. All seven sections mus
     const valText=lines.map(l=>{const tp=STYPES.find(t=>t.id===l.id);return`${tp.label}: ${l.blabel||l.opp?.slice(0,50)||'benefit'} — ${fmt(l.ann,st.curr)}/year → NPV @5yr: ${fmt(l.ann*af(st.rate,5),st.curr)}, @10yr: ${fmt(l.ann*af(st.rate,10),st.curr)}`;}).join('\n');
 
     // Build coaching digest from saved chat history
-    const digest=coachingDigest(st.chats||{});
+    const digest=coachingDigest(st.chats||{},st.coach||{});
     const digestSection=digest?`\nAI COACHING INSIGHTS FROM DIALOGUE (incorporate refined thinking from these exchanges into the report where relevant):\n${digest}\n`:'';
 
     let cfoLeverDetail='';
@@ -2187,7 +2195,9 @@ function App(){
     try{localStorage.setItem(DKEY,JSON.stringify({step,st}));}catch(e){}
   },[st,step]);
 
-  // On mount: fetch server draft and restore (server is authoritative across devices)
+  // On mount: fetch server draft and restore (server is authoritative across devices).
+  // Nothing is saved until this load finishes, so a stale local copy can't overwrite the server draft.
+  const loadedRef=useRef(false);
   useEffect(()=>{
     fetch('/api/draft/voice').then(r=>r.json()).then(data=>{
       if(data.state){
@@ -2198,11 +2208,12 @@ function App(){
         set(init());setStep(0);
         try{localStorage.removeItem(DKEY);}catch(e){}
       }
-    }).catch(()=>{});
+    }).catch(()=>{}).finally(()=>{loadedRef.current=true;});
   },[]);
 
   // Save to server immediately when step changes
   useEffect(()=>{
+    if(!loadedRef.current)return;
     setSaved(false);
     fetch('/api/draft/voice',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
       .then(()=>setSaved(true)).catch(()=>{});
@@ -2210,6 +2221,7 @@ function App(){
 
   // Save to server 2 seconds after user stops typing
   useEffect(()=>{
+    if(!loadedRef.current)return;
     const t=setTimeout(()=>{
       fetch('/api/draft/voice',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({step,st})})
         .then(()=>setSaved(true)).catch(()=>{});
