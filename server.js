@@ -273,8 +273,10 @@ app.post('/admin/users/:id/delete', requireAdmin, async (req, res) => {
 
 // Users — reset progress (clears draft, leaves account + submissions intact)
 app.post('/admin/users/:id/reset', requireAdmin, async (req, res) => {
-  await pool.query('DELETE FROM drafts WHERE user_id=$1', [req.params.id]);
-  res.redirect('/admin?msg=User+progress+reset');
+  const tables = { basic: ['drafts'], extended: ['drafts_ext'], voice: ['drafts_voice'], all: ['drafts', 'drafts_ext', 'drafts_voice'] };
+  const which = tables[req.body.version] ? req.body.version : 'basic';
+  for (const t of tables[which]) await pool.query(`DELETE FROM ${t} WHERE user_id=$1`, [req.params.id]);
+  res.redirect('/admin?msg=' + encodeURIComponent(`User progress reset (${which === 'all' ? 'all versions' : which})`));
 });
 
 // Admin — inspect draft state for a user (by username, case-insensitive)
@@ -1044,8 +1046,14 @@ function adminHTML(cohorts, users, submissions, msg) {
       <td>${fmtDt(u.last_login)}</td>
       <td>${statusBadge(u.expires_at, u.last_login)}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <form method="POST" action="/admin/users/${u.id}/reset" style="display:inline"
-              onsubmit="return confirm('Reset progress for ${u.username}? This clears their draft so they start from scratch. Their submitted reports are kept.')">
+        <form method="POST" action="/admin/users/${u.id}/reset" style="display:inline-flex;gap:4px;align-items:center"
+              onsubmit="return confirm('Reset progress for ${u.username} (' + this.version.options[this.version.selectedIndex].text + ')? This clears their draft so they start from scratch. Their submitted reports are kept.')">
+          <select name="version" style="font-size:0.72rem;padding:2px 4px;border-radius:4px;border:1px solid #ddd;font-family:inherit">
+            <option value="basic">Standard</option>
+            <option value="extended">Extended</option>
+            <option value="voice">AI Coach</option>
+            <option value="all">All versions</option>
+          </select>
           <button type="submit" class="del-btn" style="background:#E67E22;border-color:#E67E22">↺ Reset</button>
         </form>
         <form method="POST" action="/admin/users/${u.id}/delete" style="display:inline"
