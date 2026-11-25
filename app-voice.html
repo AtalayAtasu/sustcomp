@@ -500,7 +500,7 @@ function loadVoices(){
 }
 if(TTS_OK){loadVoices();speechSynthesis.addEventListener('voiceschanged',loadVoices);}
 const VOICE_KEY='sustcomp_coach_voice';
-const VOICE_MODE_KEY='sustcomp_coach_voice_mode';
+const SPEAK_KEY='sustcomp_coach_speak';
 function chosenVoice(){
   let name='';
   try{name=localStorage.getItem(VOICE_KEY)||'';}catch(e){}
@@ -702,11 +702,11 @@ function VoiceCoach({step,st,set}){
   const [listening,setListening]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
-  const [voiceMode,setVoiceModeState]=useState(()=>{try{return localStorage.getItem(VOICE_MODE_KEY)==='on';}catch(e){return false;}});
-  const setVoiceMode=on=>{
-    setVoiceModeState(on);
-    try{localStorage.setItem(VOICE_MODE_KEY,on?'on':'off');}catch(e){}
-    if(!on){if(TTS_OK)speechSynthesis.cancel();if(recRef.current)try{recRef.current.abort();}catch(e){}}
+  const [speakReplies,setSpeakState]=useState(()=>{try{return localStorage.getItem(SPEAK_KEY)==='on';}catch(e){return false;}});
+  const setSpeakReplies=on=>{
+    setSpeakState(on);
+    try{localStorage.setItem(SPEAK_KEY,on?'on':'off');}catch(e){}
+    if(!on&&TTS_OK)speechSynthesis.cancel();
   };
   const [open,setOpen]=useState(true);
   const recRef=useRef(null);
@@ -748,7 +748,7 @@ function VoiceCoach({step,st,set}){
         .map(p=>({...p,id:Date.now()+Math.random()}));
       save(c=>({msgs:[...(c.msgs||[]),{role:'assistant',content:raw,display:say}],
         pending:[...(c.pending||[]).filter(x=>!props.some(n=>n.field===x.field)),...props]}));
-      if(voiceMode)speak(say);
+      if(speakReplies)speak(say);
     }catch(e){
       save(c=>({msgs:(c.msgs||[]).slice(0,-1),lastState:cur.lastState||''}));
       setInput(said);
@@ -797,8 +797,8 @@ function VoiceCoach({step,st,set}){
         </div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:'0.75rem'}}>
-        {(VOICE_OK||TTS_OK)&&<label className="coach-toggle" title="Talk to the coach and hear its replies"><input type="checkbox" checked={voiceMode} onChange={e=>setVoiceMode(e.target.checked)}/> Voice mode</label>}
-        {TTS_OK&&voiceMode&&<VoicePicker/>}
+        {TTS_OK&&<label className="coach-toggle" title="Have the coach read its replies aloud"><input type="checkbox" checked={speakReplies} onChange={e=>setSpeakReplies(e.target.checked)}/> Coach speaks replies</label>}
+        {TTS_OK&&speakReplies&&<VoicePicker/>}
         {started&&<button className="coach-link" onClick={restart}>Restart</button>}
         <button className="coach-link" onClick={()=>setOpen(o=>!o)}>{open?'Hide':'Show'}</button>
       </div>
@@ -807,7 +807,7 @@ function VoiceCoach({step,st,set}){
       {!started&&<div className="coach-intro">
         <p>The coach will ask your team questions for this stage, challenge vague answers, and draft each field for you. Nothing goes into the form until you accept it, and you can still type directly in any box below.</p>
         {!VOICE_OK&&<p className="coach-warn">Voice input needs Chrome or Edge. In this browser you can type your answers to the coach instead.</p>}
-        {(VOICE_OK||TTS_OK)&&<p style={{fontSize:'0.76rem',color:'#777'}}>Prefer to talk? Tick <strong>Voice mode</strong> above to speak to the coach and hear its replies. Microsoft Edge has the most natural-sounding voices (★ in the voice list).</p>}
+        {VOICE_OK&&<p style={{fontSize:'0.76rem',color:'#777'}}>Press <strong>Talk</strong> to answer by voice, or type. The coach replies in text; tick <strong>Coach speaks replies</strong> above if you also want to hear it (Microsoft Edge has the most natural voices, marked ★).</p>}
         <button className="btn btn-p" style={{fontSize:'0.85rem'}} disabled={busy} onClick={()=>send('We are ready to start this stage. Please begin.')}>{busy?'Starting…':'▶ Start the conversation'}</button>
       </div>}
       {started&&<div className="coach-log">
@@ -821,10 +821,10 @@ function VoiceCoach({step,st,set}){
         <div ref={endRef}/>
       </div>}
       {started&&<div className="coach-input">
-        {VOICE_OK&&voiceMode&&<button type="button" className={`talk-btn ${listening?'on':''}`} onClick={toggleMic} disabled={busy}>
+        {VOICE_OK&&<button type="button" className={`talk-btn ${listening?'on':''}`} onClick={toggleMic} disabled={busy}>
           <MicIcon/>{listening?'Stop & send':'Talk'}
         </button>}
-        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')send(input);}} placeholder={listening?'Listening…':voiceMode&&VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
+        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')send(input);}} placeholder={listening?'Listening…':VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
         <button className="btn btn-s" style={{fontSize:'0.8rem'}} onClick={()=>send(input)} disabled={busy||listening||!input.trim()}>Send</button>
       </div>}
       {error&&<div className="vt-err" style={{marginTop:'0.5rem'}}>{error}</div>}
