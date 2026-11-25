@@ -78,6 +78,12 @@ async function initDB() {
       state      JSONB,
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS drafts_voice (
+      user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state      JSONB,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
   console.log('Database ready');
 }
 
@@ -279,14 +285,16 @@ app.get('/admin/draft/:username', requireAdmin, async (req, res) => {
     return res.status(404).json({ error: 'User not found', available_usernames: all.rows.map(r=>r.username) });
   }
   const uid = u.rows[0].id;
-  const [basic, ext] = await Promise.all([
+  const [basic, ext, voice] = await Promise.all([
     pool.query('SELECT state, updated_at FROM drafts WHERE user_id=$1', [uid]),
     pool.query('SELECT state, updated_at FROM drafts_ext WHERE user_id=$1', [uid]),
+    pool.query('SELECT state, updated_at FROM drafts_voice WHERE user_id=$1', [uid]),
   ]);
   res.json({
     username: req.params.username,
     basic:  basic.rows[0]  ? { updated_at: basic.rows[0].updated_at,  step: basic.rows[0].state?.step,  keys: Object.keys(basic.rows[0].state?.st  || {}) } : null,
     ext:    ext.rows[0]    ? { updated_at: ext.rows[0].updated_at,    step: ext.rows[0].state?.step,    keys: Object.keys(ext.rows[0].state?.st    || {}) } : null,
+    voice:  voice.rows[0]  ? { updated_at: voice.rows[0].updated_at,  step: voice.rows[0].state?.step,  keys: Object.keys(voice.rows[0].state?.st  || {}) } : null,
   });
 });
 
@@ -391,6 +399,7 @@ function serveApp(file, req, res) {
 app.get('/',        requireLogin, (req, res) => res.send(landingHTML(req.session.user.username)));
 app.get('/basic',   requireLogin, (req, res) => serveApp('app.html',          req, res));
 app.get('/extended',requireLogin, (req, res) => serveApp('app-extended.html', req, res));
+app.get('/voice',   requireLogin, (req, res) => serveApp('app-voice.html',    req, res));
 
 // ── SUBMIT API ─────────────────────────────────────────────────────────────
 
@@ -426,6 +435,25 @@ app.put('/api/draft/ext', requireLogin, async (req, res) => {
   try {
     await pool.query(
       `INSERT INTO drafts_ext(user_id, state, updated_at) VALUES($1,$2,NOW())
+       ON CONFLICT(user_id) DO UPDATE SET state=$2, updated_at=NOW()`,
+      [req.session.user.id, JSON.stringify(req.body)]
+    );
+    res.json({ ok: true });
+  } catch (e) { res.json({ ok: false }); }
+});
+
+// Voice version — separate draft slot
+app.get('/api/draft/voice', requireLogin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT state FROM drafts_voice WHERE user_id=$1', [req.session.user.id]);
+    res.json(r.rows[0] ? { state: r.rows[0].state } : {});
+  } catch (e) { res.json({}); }
+});
+
+app.put('/api/draft/voice', requireLogin, async (req, res) => {
+  try {
+    await pool.query(
+      `INSERT INTO drafts_voice(user_id, state, updated_at) VALUES($1,$2,NOW())
        ON CONFLICT(user_id) DO UPDATE SET state=$2, updated_at=NOW()`,
       [req.session.user.id, JSON.stringify(req.body)]
     );
@@ -503,9 +531,9 @@ app.post('/api/submit', requireLogin, async (req, res) => {
          JSON.stringify(d.benefitLines||[]),
          d.npv5||0, d.npv10||0, d.capex||0, d.rate||0,
          d.currency||'EUR', d.pitch||'',
-         d.consultantHtml||'', d.reportHtml||'', 'basic']);
+         d.consultantHtml||'', d.reportHtml||'', d.version === 'voice' ? 'voice' : 'basic']);
       subId = ins.rows[0].id;
-      await pool.query('DELETE FROM drafts WHERE user_id=$1', [u.id]);
+      await pool.query(`DELETE FROM ${d.version === 'voice' ? 'drafts_voice' : 'drafts'} WHERE user_id=$1`, [u.id]);
     }
 
     let emailError = null;
@@ -1213,7 +1241,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#EAF2FA;min-height:10
 .eyebrow{font-size:0.72rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#0070CC;margin-bottom:0.5rem}
 h1{font-family:'Playfair Display',Georgia,serif;font-size:1.75rem;font-weight:700;color:#002A5C;text-align:center;margin-bottom:0.4rem}
 .sub{font-size:0.9rem;color:#888;margin-bottom:2.5rem;text-align:center}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:700px;width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:1040px;width:100%}
 .card{background:white;border-radius:14px;padding:2rem 1.75rem;border:2px solid #E0EAF4;text-decoration:none;color:inherit;transition:all 0.18s;display:flex;flex-direction:column;gap:0.75rem}
 .card:hover{border-color:#004080;box-shadow:0 8px 32px rgba(0,64,128,0.12);transform:translateY(-2px)}
 .card-tag{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;align-self:flex-start}
@@ -1227,6 +1255,9 @@ h1{font-family:'Playfair Display',Georgia,serif;font-size:1.75rem;font-weight:70
 .card-arrow{margin-top:0.75rem;font-size:0.82rem;font-weight:600;color:#004080;align-self:flex-end}
 .card.ext{border-color:#E9D5FF} .card.ext:hover{border-color:#7C3AED;box-shadow:0 8px 32px rgba(124,58,237,0.12)}
 .card.ext .card-arrow{color:#6D28D9}
+.tag-voice{background:#D1FAE5;color:#047857}
+.card.voice{border-color:#A7F3D0} .card.voice:hover{border-color:#059669;box-shadow:0 8px 32px rgba(5,150,105,0.12)}
+.card.voice .card-arrow{color:#047857}
 </style></head><body>
 <div class="hdr">
   <div class="hdr-brand">
@@ -1264,6 +1295,18 @@ h1{font-family:'Playfair Display',Georgia,serif;font-size:1.75rem;font-weight:70
         <div class="card-step">AI Strategic Advisor &amp; CFO Report</div>
       </div>
       <div class="card-arrow">Start Extended →</div>
+    </a>
+    <a class="card voice" href="/voice">
+      <span class="card-tag tag-voice">Voice · Beta</span>
+      <div class="card-title">Compass with AI Coach</div>
+      <div class="card-desc">The standard four-stage analysis, guided by a voice-enabled AI coach that interviews your team, drafts your answers for you to approve, and challenges weak reasoning.</div>
+      <div class="card-steps">
+        <div class="card-step">Speak your answers or type them</div>
+        <div class="card-step">Coach asks follow-up questions</div>
+        <div class="card-step">Drafted answers you accept or edit</div>
+        <div class="card-step">AI Strategic Advisor &amp; CFO Report</div>
+      </div>
+      <div class="card-arrow">Start with Coach →</div>
     </a>
   </div>
 </div>
