@@ -412,31 +412,58 @@ const VOICE_OK=!!SR;
 const TTS_OK='speechSynthesis' in window;
 let _activeRec=null;
 
-function startDictation({onInterim,onFinal,onEnd,onError}){
-  if(_activeRec){try{_activeRec.abort();}catch(e){}}
+// Keeps listening until stop() is called. Chrome/Edge end a recognition session on their own
+// after a few seconds of silence or a network blip, so those ends trigger a quiet restart.
+function startDictation({onReady,onInterim,onFinal,onEnd,onError}){
+  if(_activeRec)_activeRec.abort();
   if(TTS_OK)speechSynthesis.cancel();
-  const rec=new SR();
   const nl=navigator.language||'';
-  rec.lang=nl.startsWith('en')?nl:'en-US';
-  rec.continuous=true;
-  rec.interimResults=true;
-  rec.onresult=e=>{
-    let interim='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const r=e.results[i];
-      if(r.isFinal)onFinal(r[0].transcript.trim());else interim+=r[0].transcript;
-    }
-    onInterim(interim);
+  const lang=nl.startsWith('en')?nl:'en-US';
+  const MAX_SILENT_RESTARTS=8;
+  let rec=null,stopped=false,fatal=false,finished=false,restarts=0;
+  const finish=()=>{
+    if(finished)return;
+    finished=true;
+    if(_activeRec===ctl)_activeRec=null;
+    onInterim&&onInterim('');
+    onEnd&&onEnd();
   };
-  rec.onerror=e=>{
-    if(e.error==='not-allowed'||e.error==='service-not-allowed')onError&&onError('Microphone access is blocked. Allow the microphone in your browser\'s address bar, then try again.');
-    else if(e.error==='no-speech')onError&&onError('No speech detected — try again, a little closer to the microphone.');
-    else if(e.error!=='aborted')onError&&onError('Voice input stopped ('+e.error+').');
+  const ctl={
+    stop(){stopped=true;if(rec){try{rec.stop();}catch(e){finish();}}else finish();},
+    abort(){stopped=true;if(rec){try{rec.abort();}catch(e){}}finish();},
   };
-  rec.onend=()=>{if(_activeRec===rec)_activeRec=null;onEnd&&onEnd();};
-  rec.start();
-  _activeRec=rec;
-  return rec;
+  const retry=delay=>{
+    if(stopped||fatal){finish();return;}
+    if(restarts>=MAX_SILENT_RESTARTS){onError&&onError('Stopped listening after a long silence. Press Talk to try again.');finish();return;}
+    restarts++;
+    setTimeout(begin,delay);
+  };
+  function begin(){
+    if(stopped){finish();return;}
+    rec=new SR();
+    rec.lang=lang;
+    rec.continuous=true;
+    rec.interimResults=true;
+    rec.onstart=()=>onReady&&onReady();
+    rec.onresult=e=>{
+      restarts=0;
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const r=e.results[i];
+        if(r.isFinal)onFinal(r[0].transcript.trim());else interim+=r[0].transcript;
+      }
+      onInterim&&onInterim(interim);
+    };
+    rec.onerror=e=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){fatal=true;onError&&onError('Microphone access is blocked. Allow the microphone in your browser\'s address bar, then try again.');}
+      else if(e.error==='audio-capture'){fatal=true;onError&&onError('No microphone was found. Check that one is connected and not in use by another app.');}
+    };
+    rec.onend=()=>{if(stopped||fatal)finish();else retry(250);};
+    try{rec.start();}catch(e){retry(400);}
+  }
+  _activeRec=ctl;
+  begin();
+  return ctl;
 }
 
 function MicIcon(){
@@ -445,6 +472,7 @@ function MicIcon(){
 
 function VTextarea({value,onChange,style,...rest}){
   const [listening,setListening]=useState(false);
+  const [ready,setReady]=useState(false);
   const [interim,setInterim]=useState('');
   const [err,setErr]=useState('');
   const recRef=useRef(null);
@@ -453,8 +481,9 @@ function VTextarea({value,onChange,style,...rest}){
   useEffect(()=>()=>{if(recRef.current)try{recRef.current.abort();}catch(e){}},[]);
   const toggle=()=>{
     if(listening){recRef.current&&recRef.current.stop();return;}
-    setErr('');
+    setErr('');setReady(false);setListening(true);
     recRef.current=startDictation({
+      onReady:()=>setReady(true),
       onInterim:setInterim,
       onFinal:t=>{
         if(!t)return;
@@ -463,15 +492,14 @@ function VTextarea({value,onChange,style,...rest}){
         valRef.current=next;
         onChange({target:{value:next}});
       },
-      onEnd:()=>{setListening(false);setInterim('');},
+      onEnd:()=>{setListening(false);setReady(false);setInterim('');},
       onError:setErr,
     });
-    setListening(true);
   };
   return<div className="vt-wrap">
     <textarea value={value} onChange={onChange} style={VOICE_OK?{...style,paddingRight:'2.75rem'}:style} {...rest}/>
     {VOICE_OK&&<button type="button" className={`mic-btn ${listening?'on':''}`} onClick={toggle} title={listening?'Stop dictation':'Dictate into this box'} aria-label={listening?'Stop dictation':'Dictate into this box'}><MicIcon/></button>}
-    {listening&&<div className="vt-interim"><span className="rec-dot"/>Listening… <em>{interim}</em></div>}
+    {listening&&<div className="vt-interim"><span className="rec-dot"/>{ready?<>Listening — click the mic again when done. <em>{interim}</em></>:'Starting microphone…'}</div>}
     {err&&<div className="vt-err">{err}</div>}
   </div>;
 }
@@ -700,6 +728,7 @@ function VoiceCoach({step,st,set}){
   const [input,setInput]=useState('');
   const [interim,setInterim]=useState('');
   const [listening,setListening]=useState(false);
+  const [micReady,setMicReady]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
   const [speakReplies,setSpeakState]=useState(()=>{try{return localStorage.getItem(SPEAK_KEY)==='on';}catch(e){return false;}});
@@ -759,14 +788,14 @@ function VoiceCoach({step,st,set}){
 
   const toggleMic=()=>{
     if(listening){recRef.current&&recRef.current.stop();return;}
-    setError('');heardRef.current='';
+    setError('');heardRef.current='';setMicReady(false);setListening(true);
     recRef.current=startDictation({
+      onReady:()=>setMicReady(true),
       onInterim:setInterim,
       onFinal:t=>{if(t)heardRef.current=(heardRef.current+' '+t).trim();setInput(heardRef.current);},
-      onEnd:()=>{setListening(false);setInterim('');if(heardRef.current)send(heardRef.current);heardRef.current='';},
+      onEnd:()=>{setListening(false);setMicReady(false);setInterim('');if(heardRef.current)send(heardRef.current);heardRef.current='';},
       onError:setError,
     });
-    setListening(true);
   };
 
   const accept=(p,value)=>{
@@ -824,7 +853,7 @@ function VoiceCoach({step,st,set}){
         {VOICE_OK&&<button type="button" className={`talk-btn ${listening?'on':''}`} onClick={toggleMic} disabled={busy}>
           <MicIcon/>{listening?'Stop & send':'Talk'}
         </button>}
-        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')send(input);}} placeholder={listening?'Listening…':VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
+        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')send(input);}} placeholder={listening?(micReady?'Listening — press Stop & send when you finish':'Starting microphone… wait a moment before speaking'):VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
         <button className="btn btn-s" style={{fontSize:'0.8rem'}} onClick={()=>send(input)} disabled={busy||listening||!input.trim()}>Send</button>
       </div>}
       {error&&<div className="vt-err" style={{marginTop:'0.5rem'}}>{error}</div>}
