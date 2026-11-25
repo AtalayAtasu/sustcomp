@@ -307,6 +307,46 @@ async function callClaude(system, messages, maxTokens=600, model='claude-sonnet-
   }
 }
 
+/* ─── NPV+ INPUT FIELDS ─── */
+function FieldPct({val,onChange,label,hint,rev,cur}){
+  const eur=rev*(parseFloat(val)||0)/100;
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label}</label>
+    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+      <div style={{position:'relative',flex:'0 0 100px'}}>
+        <input type="number" value={val} onChange={onChange} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+        <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+      </div>
+      {rev>0&&<div style={{fontSize:'0.76rem',color:'#888',flex:1}}>≈ {fmt(eur,cur)}/yr</div>}
+    </div>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
+function FieldCogsPct({val,onChange,label,hint,rev,mgn,cur}){
+  const eur=rev*(1-mgn/100)*(parseFloat(val)||0)/100;
+  const isNeg=parseFloat(val)<0;
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label}</label>
+    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+      <div style={{position:'relative',flex:'0 0 100px'}}>
+        <input type="number" value={val} onChange={onChange} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
+        <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
+      </div>
+      {rev>0&&<div style={{fontSize:'0.76rem',color:isNeg?'#c55':'#888',flex:1}}>≈ {fmt(eur,cur)}/yr {isNeg?'(added cost)':'(saving)'}</div>}
+    </div>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
+function FieldEur({val,onChange,label,hint,cur}){
+  return<div className="fld" style={{marginBottom:0}}>
+    <label>{label} ({cur}/yr)</label>
+    <input type="number" value={val} onChange={onChange} placeholder="e.g. 500000" min="0"/>
+    {hint&&<div className="fld-hint">{hint}</div>}
+  </div>;
+}
+
 /* ─── LOGO ─── */
 function Logo({dark}){
   const c=dark?'#004080':'white';
@@ -1255,49 +1295,8 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
   };
 
   const drOf=id=>actv.find(x=>x.id===id)?.dr||{};
-
-  const FieldPct=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    const eur=rev*(parseFloat(val)||0)/100;
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label}</label>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{position:'relative',flex:'0 0 100px'}}>
-          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
-          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
-        </div>
-        {rev>0&&<div style={{fontSize:'0.76rem',color:'#888',flex:1}}>≈ {fmt(eur,cur)}/yr</div>}
-      </div>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
-
-  const FieldCogsPct=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    const cogs=rev*(1-mgn/100);
-    const eur=cogs*(parseFloat(val)||0)/100;
-    const isNeg=parseFloat(val)<0;
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label}</label>
-      <div style={{display:'flex',gap:8,alignItems:'center'}}>
-        <div style={{position:'relative',flex:'0 0 100px'}}>
-          <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="0" min="-100" max="100" style={{paddingRight:'1.8rem'}}/>
-          <span style={{position:'absolute',right:'0.5rem',top:'50%',transform:'translateY(-50%)',color:'#999',fontSize:'0.8rem',pointerEvents:'none'}}>%</span>
-        </div>
-        {rev>0&&<div style={{fontSize:'0.76rem',color:isNeg?'#c55':'#888',flex:1}}>≈ {fmt(eur,cur)}/yr {isNeg?'(added cost)':'(saving)'}</div>}
-      </div>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
-
-  const FieldEur=({id,fkey,label,hint})=>{
-    const val=drOf(id)[fkey]||'';
-    return<div className="fld" style={{marginBottom:0}}>
-      <label>{label} ({cur}/yr)</label>
-      <input type="number" value={val} onChange={e=>ustd(id,fkey,e.target.value)} placeholder="e.g. 500000" min="0"/>
-      {hint&&<div className="fld-hint">{hint}</div>}
-    </div>;
-  };
+  const fp=(id,fkey)=>({val:drOf(id)[fkey]||'',onChange:e=>ustd(id,fkey,e.target.value),rev,mgn,cur});
+  const fe=(id,fkey)=>({val:drOf(id)[fkey]||'',onChange:e=>ustd(id,fkey,e.target.value),cur});
 
   return<div>
     <div className="card">
@@ -1374,21 +1373,21 @@ Be specific: name companies, cite reports with years and actual numbers. If no b
             <div className="fld" style={{marginTop:'0.75rem',marginBottom:'0.5rem'}}><label>Benefit label</label><input type="text" value={s.blabel} onChange={e=>usth(s.id,'blabel',e.target.value)} placeholder={s.opp?s.opp.slice(0,70):'Short label for this benefit line'}/></div>
             <div style={{display:'grid',gap:'0.75rem',gridTemplateColumns:'1fr 1fr'}}>
               {s.id==='soc'&&<>
-                <FieldPct id="soc" fkey="inputPct" label="Input/supply cost reduction" hint="% of annual revenue"/>
-                <FieldEur id="soc" fkey="talentEur" label="Talent savings — retention &amp; productivity" hint="Annual HR cost savings from lower turnover"/>
-                <FieldEur id="soc" fkey="envEur" label="Environmental savings — carbon, resources" hint="Carbon credits, avoided resource costs, etc."/>
+                <FieldPct {...fp('soc','inputPct')} label="Input/supply cost reduction" hint="% of annual revenue"/>
+                <FieldEur {...fe('soc','talentEur')} label="Talent savings — retention &amp; productivity" hint="Annual HR cost savings from lower turnover"/>
+                <FieldEur {...fe('soc','envEur')} label="Environmental savings — carbon, resources" hint="Carbon credits, avoided resource costs, etc."/>
               </>}
               {s.id==='eco'&&<>
-                <FieldPct id="eco" fkey="volPct" label="Volume growth from sustainability credentials" hint="% of annual revenue → incremental sales"/>
-                <FieldPct id="eco" fkey="premPct" label="Sustainable price premium captured" hint="% of annual revenue → additional margin"/>
-                <FieldCogsPct id="eco" fkey="cogsNet" label="Net COGS impact (+ savings / − added cost)" hint="% of COGS — use negative if sustainability raises unit costs"/>
+                <FieldPct {...fp('eco','volPct')} label="Volume growth from sustainability credentials" hint="% of annual revenue → incremental sales"/>
+                <FieldPct {...fp('eco','premPct')} label="Sustainable price premium captured" hint="% of annual revenue → additional margin"/>
+                <FieldCogsPct {...fp('eco','cogsNet')} label="Net COGS impact (+ savings / − added cost)" hint="% of COGS — use negative if sustainability raises unit costs"/>
               </>}
               {s.id==='reg'&&<>
-                <FieldEur id="reg" fkey="compEur" label="Regulatory compliance savings / avoided fines" hint="Annual cost avoidance from meeting or pre-empting regulations"/>
-                <FieldEur id="reg" fkey="grantsEur" label="Tax incentives, grants, or subsidies" hint="Annual value of public support or tax relief"/>
+                <FieldEur {...fe('reg','compEur')} label="Regulatory compliance savings / avoided fines" hint="Annual cost avoidance from meeting or pre-empting regulations"/>
+                <FieldEur {...fe('reg','grantsEur')} label="Tax incentives, grants, or subsidies" hint="Annual value of public support or tax relief"/>
               </>}
               {s.id==='inv'&&<>
-                <FieldEur id="inv" fkey="finEur" label="Reduction in financing costs / better credit terms" hint="Annual saving from improved borrowing terms or ESG premium"/>
+                <FieldEur {...fe('inv','finEur')} label="Reduction in financing costs / better credit terms" hint="Annual saving from improved borrowing terms or ESG premium"/>
               </>}
             </div>
           </div>
