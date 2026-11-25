@@ -473,6 +473,7 @@ function MicIcon(){
 function VTextarea({value,onChange,style,...rest}){
   const [listening,setListening]=useState(false);
   const [ready,setReady]=useState(false);
+  const [stopping,setStopping]=useState(false);
   const [interim,setInterim]=useState('');
   const [err,setErr]=useState('');
   const recRef=useRef(null);
@@ -480,7 +481,8 @@ function VTextarea({value,onChange,style,...rest}){
   valRef.current=value;
   useEffect(()=>()=>{if(recRef.current)try{recRef.current.abort();}catch(e){}},[]);
   const toggle=()=>{
-    if(listening){recRef.current&&recRef.current.stop();return;}
+    if(stopping)return;
+    if(listening){setStopping(true);recRef.current&&recRef.current.stop();return;}
     setErr('');setReady(false);setListening(true);
     recRef.current=startDictation({
       onReady:()=>setReady(true),
@@ -492,14 +494,14 @@ function VTextarea({value,onChange,style,...rest}){
         valRef.current=next;
         onChange({target:{value:next}});
       },
-      onEnd:()=>{setListening(false);setReady(false);setInterim('');},
+      onEnd:()=>{recRef.current=null;setListening(false);setReady(false);setStopping(false);setInterim('');},
       onError:setErr,
     });
   };
   return<div className="vt-wrap">
     <textarea value={value} onChange={onChange} style={VOICE_OK?{...style,paddingRight:'2.75rem'}:style} {...rest}/>
     {VOICE_OK&&<button type="button" className={`mic-btn ${listening?'on':''}`} onClick={toggle} title={listening?'Stop dictation':'Dictate into this box'} aria-label={listening?'Stop dictation':'Dictate into this box'}><MicIcon/></button>}
-    {listening&&<div className="vt-interim"><span className="rec-dot"/>{ready?<>Listening — click the mic again when done. <em>{interim}</em></>:'Starting microphone…'}</div>}
+    {listening&&<div className="vt-interim"><span className="rec-dot"/>{stopping?'Finishing…':ready?<>Listening — click the mic again when done. <em>{interim}</em></>:'Starting microphone…'}</div>}
     {err&&<div className="vt-err">{err}</div>}
   </div>;
 }
@@ -721,15 +723,30 @@ function ProposalCard({p,step,current,onAccept,onDismiss}){
   </div>;
 }
 
+// In-flight coach requests per step, kept outside the component so a remount
+// (leaving the step and coming back) still knows a reply is on its way.
+const _coachInflight={};
+
+// The API needs the conversation to open with a user turn; drop anything before the first one.
+function apiHistory(msgs){
+  const first=msgs.findIndex(m=>m.role==='user');
+  return first<0?[]:msgs.slice(first).map(m=>({role:m.role,content:m.content}));
+}
+
 function VoiceCoach({step,st,set}){
   const saved=(st.coach||{})[step]||{msgs:[],pending:[],lastState:''};
   const msgs=saved.msgs||[];
   const pending=saved.pending||[];
   const [input,setInput]=useState('');
   const [interim,setInterim]=useState('');
-  const [listening,setListening]=useState(false);
-  const [micReady,setMicReady]=useState(false);
-  const [busy,setBusy]=useState(false);
+  const [mic,setMic]=useState('off'); // off | starting | on | stopping
+  const listening=mic!=='off';
+  const [busy,setBusyState]=useState(!!_coachInflight[step]);
+  const busyRef=useRef(!!_coachInflight[step]);
+  const setBusy=b=>{busyRef.current=b;if(mountedRef.current)setBusyState(b);};
+  const queuedRef=useRef('');
+  const mountedRef=useRef(true);
+  const discardRef=useRef(false);
   const [error,setError]=useState('');
   const [speakReplies,setSpeakState]=useState(()=>{try{return localStorage.getItem(SPEAK_KEY)==='on';}catch(e){return false;}});
   const setSpeakReplies=on=>{
@@ -745,27 +762,52 @@ function VoiceCoach({step,st,set}){
   stRef.current=st;
 
   useEffect(()=>{if(endRef.current)endRef.current.scrollIntoView({behavior:'smooth',block:'nearest'});},[msgs.length,busy,pending.length]);
-  useEffect(()=>()=>{if(recRef.current)try{recRef.current.abort();}catch(e){};if(TTS_OK)speechSynthesis.cancel();},[]);
+  useEffect(()=>{
+    mountedRef.current=true;
+    const inflight=_coachInflight[step];
+    if(inflight)inflight.finally(()=>{
+      if(!mountedRef.current||_coachInflight[step])return;
+      busyRef.current=false;setBusyState(false);
+      if(queuedRef.current){const next=queuedRef.current;queuedRef.current='';send(next);}
+    });
+    return()=>{
+      mountedRef.current=false;
+      stopMic(true);
+      if(TTS_OK)speechSynthesis.cancel();
+    };
+  },[]);
 
   const save=patch=>set(s=>{
     const cur=(s.coach||{})[step]||{msgs:[],pending:[],lastState:''};
     return{...s,coach:{...(s.coach||{}),[step]:{...cur,...(typeof patch==='function'?patch(cur):patch)}}};
   });
 
+  // discard=true ends the microphone without sending what it heard.
+  const stopMic=discard=>{
+    if(!recRef.current)return;
+    discardRef.current=!!discard;
+    if(discard)recRef.current.abort();else recRef.current.stop();
+  };
+
   const send=async(utterance)=>{
     const said=(utterance||'').trim();
-    if(!said||busy)return;
-    setError('');setBusy(true);setInput('');
-    const cur=(stRef.current.coach||{})[step]||{msgs:[],pending:[],lastState:''};
+    if(!said)return;
+    if(busyRef.current){queuedRef.current=(queuedRef.current+' '+said).trim();return;}
+    setError('');setBusy(true);
+    if(mountedRef.current)setInput('');
+    const cur=(stRef.current.coach||{})[step]||{msgs:[],pending:[],lastState:'',gen:0};
+    const gen=cur.gen||0;
     const state=formStateText(stRef.current,step);
     const content=(state!==cur.lastState?state+'\n\n':'')+'Team: '+said;
-    const userMsg={role:'user',content,display:said};
+    const userMsg={id:Date.now()+Math.random(),role:'user',content,display:said};
     const history=[...(cur.msgs||[]),userMsg];
     save({msgs:history,lastState:state});
+    let resolveInflight;
+    _coachInflight[step]=new Promise(r=>{resolveInflight=r;});
     try{
       const data=await claudeRequest({
         system:coachSystemPrompt(step),
-        messages:history.map(m=>({role:m.role,content:m.content})),
+        messages:apiHistory(history),
         maxTokens:4000,effort:'low',
         format:{type:'json_schema',schema:coachSchema(step)},
       });
@@ -775,26 +817,51 @@ function VoiceCoach({step,st,set}){
         .map(p=>({field:p.field,value:normaliseProposal(p.field,p.value)}))
         .filter(p=>p.value!==null)
         .map(p=>({...p,id:Date.now()+Math.random()}));
-      save(c=>({msgs:[...(c.msgs||[]),{role:'assistant',content:raw,display:say}],
+      // Restarted (or the user turn vanished) while waiting: drop this reply.
+      const isStale=c=>(c.gen||0)!==gen||!(c.msgs||[]).some(m=>m.id===userMsg.id);
+      const stale=isStale((stRef.current.coach||{})[step]||{});
+      // Render synchronously so a queued answer sent right after this sees the reply in the history.
+      ReactDOM.flushSync(()=>save(c=>isStale(c)?{}:{msgs:[...c.msgs,{role:'assistant',content:raw,display:say}],
         pending:[...(c.pending||[]).filter(x=>!props.some(n=>n.field===x.field)),...props]}));
-      if(speakReplies)speak(say);
+      if(!stale&&speakReplies&&mountedRef.current&&!recRef.current)speak(say);
     }catch(e){
-      save(c=>({msgs:(c.msgs||[]).slice(0,-1),lastState:cur.lastState||''}));
-      setInput(said);
-      setError(e.message==='NO_KEY'?'No API key is set for this cohort. Ask your instructor.':'The coach could not respond: '+e.message);
+      save(c=>({msgs:(c.msgs||[]).filter(m=>m.id!==userMsg.id),lastState:cur.lastState||''}));
+      if(mountedRef.current){
+        setInput(said);
+        setError(e.message==='NO_KEY'?'No API key is set for this cohort. Ask your instructor.':'The coach could not respond: '+e.message);
+      }
+      queuedRef.current='';
+    }finally{
+      delete _coachInflight[step];
+      resolveInflight();
+      setBusy(false);
     }
-    setBusy(false);
+    if(queuedRef.current&&mountedRef.current){
+      const next=queuedRef.current;
+      queuedRef.current='';
+      send(next);
+    }
   };
 
   const toggleMic=()=>{
-    if(listening){recRef.current&&recRef.current.stop();return;}
-    setError('');heardRef.current='';setMicReady(false);setListening(true);
+    if(mic==='on'||mic==='starting'){setMic('stopping');stopMic(false);return;}
+    if(mic==='stopping')return;
+    setError('');heardRef.current='';discardRef.current=false;setMic('starting');
+    if(TTS_OK)speechSynthesis.cancel();
     recRef.current=startDictation({
-      onReady:()=>setMicReady(true),
-      onInterim:setInterim,
-      onFinal:t=>{if(t)heardRef.current=(heardRef.current+' '+t).trim();setInput(heardRef.current);},
-      onEnd:()=>{setListening(false);setMicReady(false);setInterim('');if(heardRef.current)send(heardRef.current);heardRef.current='';},
-      onError:setError,
+      onReady:()=>{if(mountedRef.current)setMic(m=>m==='starting'?'on':m);},
+      onInterim:t=>{if(mountedRef.current)setInterim(t);},
+      onFinal:t=>{if(t)heardRef.current=(heardRef.current+' '+t).trim();if(mountedRef.current)setInput(heardRef.current);},
+      onEnd:()=>{
+        recRef.current=null;
+        const heard=heardRef.current;
+        heardRef.current='';
+        if(mountedRef.current){setMic('off');setInterim('');}
+        if(!discardRef.current&&heard&&mountedRef.current)send(heard);
+        else if(mountedRef.current&&discardRef.current)setInput('');
+        discardRef.current=false;
+      },
+      onError:m=>{if(mountedRef.current)setError(m);},
     });
   };
 
@@ -811,7 +878,14 @@ function VoiceCoach({step,st,set}){
   const restart=()=>{
     if(!window.confirm('Restart the conversation for this stage? Answers already in the form are kept.'))return;
     if(TTS_OK)speechSynthesis.cancel();
-    save({msgs:[],pending:[],lastState:''});
+    stopMic(true);
+    queuedRef.current='';
+    setInput('');setError('');
+    save(c=>({msgs:[],pending:[],lastState:'',gen:(c.gen||0)+1}));
+  };
+  const toggleOpen=()=>{
+    if(open){stopMic(true);if(TTS_OK)speechSynthesis.cancel();}
+    setOpen(o=>!o);
   };
 
   const started=msgs.length>0;
@@ -829,7 +903,7 @@ function VoiceCoach({step,st,set}){
         {TTS_OK&&<label className="coach-toggle" title="Have the coach read its replies aloud"><input type="checkbox" checked={speakReplies} onChange={e=>setSpeakReplies(e.target.checked)}/> Coach speaks replies</label>}
         {TTS_OK&&speakReplies&&<VoicePicker/>}
         {started&&<button className="coach-link" onClick={restart}>Restart</button>}
-        <button className="coach-link" onClick={()=>setOpen(o=>!o)}>{open?'Hide':'Show'}</button>
+        <button className="coach-link" onClick={toggleOpen}>{open?'Hide':'Show'}</button>
       </div>
     </div>
     {open&&<div className="coach-body">
@@ -850,10 +924,11 @@ function VoiceCoach({step,st,set}){
         <div ref={endRef}/>
       </div>}
       {started&&<div className="coach-input">
-        {VOICE_OK&&<button type="button" className={`talk-btn ${listening?'on':''}`} onClick={toggleMic} disabled={busy}>
-          <MicIcon/>{listening?'Stop & send':'Talk'}
+        {VOICE_OK&&<button type="button" className={`talk-btn ${listening?'on':''}`} onClick={toggleMic} disabled={mic==='stopping'}>
+          <MicIcon/>{mic==='stopping'?'Sending…':listening?'Stop & send':'Talk'}
         </button>}
-        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')send(input);}} placeholder={listening?(micReady?'Listening — press Stop & send when you finish':'Starting microphone… wait a moment before speaking'):VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
+        <input type="text" value={listening?(input+' '+interim).trim():input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!busy)send(input);}}
+          placeholder={mic==='starting'?'Starting microphone… wait a moment before speaking':mic==='on'?(busy?'Listening — your answer will be sent once the coach finishes':'Listening — press Stop & send when you finish'):mic==='stopping'?'Finishing…':VOICE_OK?'Or type your answer and press Enter':'Type your answer and press Enter'} disabled={listening||busy}/>
         <button className="btn btn-s" style={{fontSize:'0.8rem'}} onClick={()=>send(input)} disabled={busy||listening||!input.trim()}>Send</button>
       </div>}
       {error&&<div className="vt-err" style={{marginTop:'0.5rem'}}>{error}</div>}
